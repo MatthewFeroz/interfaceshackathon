@@ -153,6 +153,44 @@ ptyManager.on('data', (data: string) => {
   }
 });
 
+// Auto-retry on generation timeout (one attempt)
+let retryCount = 0;
+const MAX_RETRIES = 1;
+
+store.on('generation:timeout', () => {
+  if (retryCount < MAX_RETRIES) {
+    retryCount++;
+    console.log(`[retry] Generation timed out, retrying (attempt ${retryCount})...`);
+    store.emitProgress('Retrying generation...');
+
+    const layout = store.getLayout();
+    if (layout.blocks.length && ptyManager.isReady()) {
+      store.setStatus('generating');
+      const prompt = buildGeneratePrompt(layout);
+      ptyManager.injectPrompt(prompt);
+    }
+  } else {
+    console.log('[retry] Max retries reached, giving up');
+    store.emitProgress('Generation failed — try again');
+  }
+});
+
+// Reset retry count when generation succeeds
+store.on('preview:updated', () => {
+  retryCount = 0;
+});
+
+// Detect errors in PTY output and reset status
+ptyManager.on('data', (data: string) => {
+  if (store.getStatus() === 'idle') return;
+  const text = data.toLowerCase();
+  if (text.includes('error') && (text.includes('mcp') || text.includes('tool') || text.includes('failed'))) {
+    console.log('[error-detect] Detected error in PTY output, resetting status');
+    store.emitProgress('Error detected — ready to retry');
+    store.setStatus('idle');
+  }
+});
+
 // Auto-restart PTY on crash
 ptyManager.on('exit', (exitCode: number, signal: number) => {
   console.log(`[pty] Exited unexpectedly (code=${exitCode}, signal=${signal}), restarting in 2s...`);
