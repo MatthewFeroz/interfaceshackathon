@@ -66,10 +66,27 @@ await fetch('http://localhost:3001/api/state/layout', {
 ```
 
 #### POST `/api/pty/start`
-Start the Claude Code terminal. Call once on app load.
+Start the Claude Code terminal. **The backend now starts the PTY eagerly on boot**, so you typically don't need to call this. It's kept for manual restart scenarios.
 
 ```js
 await fetch('http://localhost:3001/api/pty/start', { method: 'POST' });
+```
+
+#### POST `/api/pty/restart`
+Restart the Claude Code terminal. Use if the PTY crashes or you want a fresh session.
+
+```js
+await fetch('http://localhost:3001/api/pty/restart', { method: 'POST' });
+```
+
+#### GET `/api/health`
+Health check. Includes PTY status so the frontend can show if Claude is ready.
+
+```js
+const res = await fetch('http://localhost:3001/api/health');
+const { ok, pty } = await res.json();
+// pty.running: boolean — PTY process is alive
+// pty.ready: boolean — Claude Code has finished loading and is ready for prompts
 ```
 
 #### POST `/api/generate`
@@ -166,7 +183,7 @@ uiWs.onmessage = (e) => {
 
 ## Typical User Flow
 
-1. **App loads** → `POST /api/pty/start` (spawns Claude Code terminal)
+1. **App loads** → PTY is already running (started eagerly on backend boot). Connect `/ws/terminal` to show Claude Code terminal. Optionally poll `GET /api/health` to check `pty.ready`.
 2. **User drags blocks** → `POST /api/state/layout` (update layout on every change)
 3. **User clicks Generate** → `POST /api/generate` (injects prompt into Claude)
 4. **Claude works** → visible in terminal via `/ws/terminal`

@@ -26,37 +26,43 @@ function writeMcpConfig(): void {
     },
   };
   fs.writeFileSync(MCP_CONFIG_PATH, JSON.stringify(config, null, 2));
-  console.log('[init] Wrote mcp-config.json:', MCP_CONFIG_PATH);
+  console.log('[init] Wrote mcp-config.json');
 }
 
 // ── System prompt ──────────────────────────────────────────────────────────
 
 function writeSystemPrompt(): void {
-  const claudeMd = `You are a website builder assistant working inside a visual drag-and-drop page builder.
+  const claudeMd = `You are a website builder. Users design layouts visually; you generate the HTML.
 
-You have three MCP tools:
-- get_layout(): Returns the current page layout as JSON. Each block has a type, id, and props.
-- show_preview(html): Sends HTML to the preview iframe. Call this to show your work.
-- get_user_feedback(): Returns text feedback from the user. Check after generating.
+## Tools
+- get_layout() — returns the page layout as JSON (block types, props, theme, colors)
+- show_preview(html) — sends HTML to the live preview iframe
+- get_user_feedback() — returns revision requests from the user
 
-Workflow:
-1. Call get_layout() to understand the page structure.
-2. Generate a complete, self-contained HTML page with inline CSS.
-3. Call show_preview(html) to display it.
-4. Call get_user_feedback() to check for revisions.
-5. If feedback exists, revise and call show_preview() again.
+## Workflow
+1. Call get_layout() to read the page structure.
+2. Generate a complete, self-contained HTML document.
+3. Call show_preview(html) immediately — speed matters.
+4. Call get_user_feedback(). If feedback exists, revise and show_preview() again.
 
-Rules:
-- Always produce valid, complete HTML documents.
-- Use modern CSS (flexbox, grid, custom properties). All styles inline in a <style> tag.
-- Use https://placehold.co/ for placeholder images.
-- Make pages responsive.
+## HTML Quality
+- Complete HTML5 document with all CSS in a single <style> tag.
+- Use Google Fonts (link in <head>) for professional typography.
+- Modern CSS: flexbox, grid, custom properties, smooth transitions.
+- Responsive: mobile-first, looks great at all breakpoints.
+- Use the accent color from the layout for buttons, links, and highlights.
+- Use https://placehold.co/ for any placeholder images.
+- Generous whitespace, clear visual hierarchy, polished feel.
+
+## Important
+- Be fast. Generate and show_preview() as quickly as possible.
 - Use only the user's content — do not invent business details.
+- Do not explain what you're doing. Just call the tools and produce the HTML.
 `;
   const outPath = path.join(WORKSPACE_DIR, 'CLAUDE.md');
   fs.mkdirSync(WORKSPACE_DIR, { recursive: true });
   fs.writeFileSync(outPath, claudeMd);
-  console.log('[init] Wrote system prompt:', outPath);
+  console.log('[init] Wrote system prompt');
 }
 
 // ── Express app ────────────────────────────────────────────────────────────
@@ -76,9 +82,15 @@ app.use((_req, res, next) => {
   next();
 });
 
-// Health check
+// Health check — includes PTY status
 app.get('/api/health', (_req, res) => {
-  res.json({ ok: true });
+  res.json({
+    ok: true,
+    pty: {
+      running: ptyManager.isRunning(),
+      ready: ptyManager.isReady(),
+    },
+  });
 });
 
 // Serve test.html at root for dev testing
@@ -92,18 +104,27 @@ app.use('/api/state', stateRouter);
 // PTY manager
 const ptyManager = new PtyManager();
 
+// Auto-restart PTY on crash
+ptyManager.on('exit', (exitCode: number, signal: number) => {
+  console.log(`[pty] Exited unexpectedly (code=${exitCode}, signal=${signal}), restarting in 2s...`);
+  setTimeout(() => {
+    if (!ptyManager.isRunning()) {
+      ptyManager.start();
+    }
+  }, 2000);
+});
+
 // Save prompt endpoint (for frontend compatibility)
 app.post('/api/save-prompt', (req, res) => {
   const { markdown } = req.body;
   if (markdown) {
     const promptPath = path.join(PROJECT_ROOT, 'temp-prompt.md');
     fs.writeFileSync(promptPath, markdown);
-    console.log('[api] Saved prompt to', promptPath);
   }
   res.json({ ok: true });
 });
 
-// PTY start
+// PTY start (kept for backward compat — PTY starts eagerly now)
 app.post('/api/pty/start', (_req, res) => {
   try {
     if (!ptyManager.isRunning()) {
@@ -112,6 +133,17 @@ app.post('/api/pty/start', (_req, res) => {
     res.json({ ok: true });
   } catch (err) {
     console.error('[api] PTY start failed:', err);
+    res.status(500).json({ error: String(err) });
+  }
+});
+
+// PTY restart
+app.post('/api/pty/restart', (_req, res) => {
+  try {
+    ptyManager.restart();
+    res.json({ ok: true });
+  } catch (err) {
+    console.error('[api] PTY restart failed:', err);
     res.status(500).json({ error: String(err) });
   }
 });
@@ -133,7 +165,7 @@ app.post('/api/generate', (_req, res) => {
     store.clearFeedback();
 
     const prompt = buildGeneratePrompt(layout);
-    console.log('[generate] Injecting prompt into PTY:\n', prompt.substring(0, 200) + '...');
+    console.log('[generate] Injecting prompt (%d chars)', prompt.length);
     ptyManager.injectPrompt(prompt);
 
     res.json({ ok: true });
@@ -161,7 +193,7 @@ app.post('/api/revise', (req, res) => {
     store.setFeedback(feedback);
 
     const prompt = buildRevisionPrompt(feedback);
-    console.log('[revise] Injecting revision prompt into PTY:\n', prompt.substring(0, 200) + '...');
+    console.log('[revise] Injecting revision (%d chars)', prompt.length);
     ptyManager.injectPrompt(prompt);
 
     res.json({ ok: true });
@@ -202,10 +234,12 @@ function startup(): void {
   writeSystemPrompt();
 
   server.listen(PORT, () => {
-    console.log(`[akita] Backend running on http://localhost:${PORT}`);
-    console.log(`[akita] Terminal WS:   ws://localhost:${PORT}/ws/terminal`);
-    console.log(`[akita] UI WS:         ws://localhost:${PORT}/ws/ui`);
-    console.log(`[akita] Health:        http://localhost:${PORT}/api/health`);
+    console.log(`[akita] Backend on http://localhost:${PORT}`);
+    console.log(`[akita] Test UI:  http://localhost:${PORT}/test`);
+
+    // Eager PTY startup — Claude Code is ready by the time the user loads the page
+    console.log('[akita] Starting Claude Code PTY...');
+    ptyManager.start();
   });
 }
 

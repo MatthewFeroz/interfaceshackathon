@@ -14,7 +14,9 @@ temp-prompt.md
 
 # Playwright MCP artifacts
 .playwright-mcp/
-*.png
+
+# Test screenshots
+screenshots/
 
 # Claude Code local session settings
 .claude/settings.local.json
