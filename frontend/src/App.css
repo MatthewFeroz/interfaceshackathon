@@ -955,7 +955,7 @@
 }
 
 .terminal-panel.open {
-  width: 340px;
+  width: 480px;
 }
 
 .terminal-header {
@@ -989,6 +989,14 @@
   color: #64748b;
   flex: 1;
   font-family: 'Fira Code', monospace;
+}
+
+.terminal-ws-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  transition: background 0.3s;
 }
 
 .terminal-label {

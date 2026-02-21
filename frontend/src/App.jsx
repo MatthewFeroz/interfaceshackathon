@@ -477,8 +477,19 @@ ${imageSection}
     const term = terminalRef.current
     const md   = buildMarkdown()
 
-    // Open terminal and reset it
+    // Open terminal
     setTerminalOpen(true)
+
+    // ── WS mode: hand off to teammate's backend terminal ────────────────────
+    if (term?.hasWS()) {
+      // Save the spec first so the backend can read it
+      if (SAVE_ENDPOINT) await saveToServer(md)
+      else setOutput(md)   // keep it accessible via View Output
+      term.connectWS()
+      return
+    }
+
+    // ── Log mode: stream Claude API output inline ────────────────────────────
     term?.reset()
     term?.log('info', 'Collecting form data...')
     term?.log('info', `Built spec — ${md.length} chars`)
@@ -618,6 +629,9 @@ ${imageSection}
                 placeholder="sk-ant-api03-… (optional)"
                 value={apiKey}
                 onChange={e => setApiKey(e.target.value)}
+                autoComplete="off"
+                data-1p-ignore
+                data-lpignore="true"
               />
             </div>
           </div>

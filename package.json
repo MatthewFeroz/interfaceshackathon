@@ -1,0 +1,25 @@
+{
+  "name": "interfaceshackathon",
+  "version": "1.0.0",
+  "description": "A drag-and-drop frontend prompt builder for non-technical users. Fill out a funnel, get a markdown spec that a Claude Code agent can use to one-shot generate a website.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/MatthewFeroz/interfaceshackathon.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/MatthewFeroz/interfaceshackathon/issues"
+  },
+  "homepage": "https://github.com/MatthewFeroz/interfaceshackathon#readme",
+  "dependencies": {
+    "node-pty": "^1.1.0",
+    "ws": "^8.19.0"
+  }
+}
