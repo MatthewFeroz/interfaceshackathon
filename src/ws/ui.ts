@@ -14,8 +14,8 @@ export function setupUiWs(server: Server): WebSocketServer {
     }
   };
 
-  store.on('preview:updated', (html: string) => {
-    broadcast({ type: 'preview:updated', payload: { html } });
+  store.on('preview:updated', (html: string, version: number) => {
+    broadcast({ type: 'preview:updated', payload: { html, version } });
   });
 
   store.on('status:changed', (status: string) => {

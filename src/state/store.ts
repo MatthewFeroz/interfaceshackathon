@@ -20,9 +20,16 @@ export interface PageLayout {
 
 export type AgentStatus = 'idle' | 'generating' | 'revising';
 
+export interface PreviewVersion {
+  version: number;
+  html: string;
+  timestamp: string;
+}
+
 interface State {
   layout: PageLayout;
   previewHtml: string;
+  previewVersions: PreviewVersion[];
   feedback: string;
   status: AgentStatus;
 }
@@ -31,6 +38,7 @@ class Store extends EventEmitter {
   private state: State = {
     layout: { blocks: [] },
     previewHtml: '',
+    previewVersions: [],
     feedback: '',
     status: 'idle',
   };
@@ -50,9 +58,23 @@ class Store extends EventEmitter {
 
   setPreviewHtml(html: string): void {
     this.state.previewHtml = html;
-    this.emit('preview:updated', html);
+    const version: PreviewVersion = {
+      version: this.state.previewVersions.length + 1,
+      html,
+      timestamp: new Date().toISOString(),
+    };
+    this.state.previewVersions.push(version);
+    this.emit('preview:updated', html, version.version);
     // Generation is done when preview is set
     this.setStatus('idle');
+  }
+
+  getPreviewVersions(): PreviewVersion[] {
+    return this.state.previewVersions;
+  }
+
+  getPreviewVersion(version: number): PreviewVersion | undefined {
+    return this.state.previewVersions[version - 1];
   }
 
   getFeedback(): string {

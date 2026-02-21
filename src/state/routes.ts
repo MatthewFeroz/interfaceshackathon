@@ -23,6 +23,24 @@ stateRouter.post('/preview', (req, res) => {
   res.json({ ok: true });
 });
 
+// Preview versions
+stateRouter.get('/preview/versions', (_req, res) => {
+  const versions = store.getPreviewVersions().map(({ version, timestamp }) => ({
+    version,
+    timestamp,
+  }));
+  res.json({ versions, total: versions.length });
+});
+
+stateRouter.get('/preview/versions/:version', (req, res) => {
+  const v = store.getPreviewVersion(parseInt(req.params.version, 10));
+  if (!v) {
+    res.status(404).json({ error: 'Version not found' });
+    return;
+  }
+  res.json(v);
+});
+
 // Feedback
 stateRouter.get('/feedback', (_req, res) => {
   res.json({ feedback: store.getFeedback() });
