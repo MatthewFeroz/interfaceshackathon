@@ -167,6 +167,11 @@ app.post('/api/generate', (_req, res) => {
       ptyManager.start();
     }
 
+    if (!ptyManager.isReady()) {
+      res.status(503).json({ error: 'Claude Code is still starting up — try again in a few seconds' });
+      return;
+    }
+
     // Clear previous feedback and set status
     store.clearFeedback();
     store.setStatus('generating');
@@ -196,8 +201,8 @@ app.post('/api/revise', (req, res) => {
       return;
     }
 
-    if (!ptyManager.isRunning()) {
-      res.status(400).json({ error: 'PTY not running — start it and generate first' });
+    if (!ptyManager.isRunning() || !ptyManager.isReady()) {
+      res.status(503).json({ error: 'Claude Code is not ready — generate first' });
       return;
     }
 
