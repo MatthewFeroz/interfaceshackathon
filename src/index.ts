@@ -41,12 +41,14 @@ function writeSystemPrompt(): void {
 - show_preview(html) — sends final HTML to the live preview iframe (saves a version)
 - get_user_feedback() — returns revision requests from the user
 
-## Workflow
+## Workflow — Progressive Generation (FOLLOW THIS EXACTLY)
 1. Call get_layout() to read the page structure.
-2. Generate the HTML document section by section.
-3. After completing 2-3 sections, call show_progress(html) with whatever you have so far (even if incomplete). The user sees the page build up live. This is important for perceived speed.
-4. When ALL sections are done, call show_preview(html) with the final complete HTML.
+2. **Phase 1 — Wireframe**: Generate a basic HTML skeleton with all sections as simple gray placeholder blocks. Each section should have a gray background (#f0f0f0), the section name as a heading, and a dashed border. No real content, no styling. Call show_progress(html). This gives the user an instant visual of the page structure.
+3. **Phase 2 — Content & Layout**: Now add real content, proper layout (grid, flexbox), typography, and images (placehold.co). Keep colors muted/neutral at this stage. Call show_progress(html). The user sees the page take shape.
+4. **Phase 3 — Full Polish**: Apply the theme, accent colors, gradients, shadows, hover effects, and all visual polish. This is the final version. Call show_preview(html).
 5. Call get_user_feedback(). If feedback exists, revise and show_preview() again.
+
+This 3-phase approach is critical for the user experience. The user watches the page evolve from wireframe → content → polished design. Do NOT skip phases or combine them.
 
 ## HTML Rules — Follow These Exactly
 - Every top-level section wrapper MUST have a \`data-block-id\` attribute matching the block's id from the layout (e.g. \`<section data-block-id="hero-1">\`). This is required for section-level editing.
