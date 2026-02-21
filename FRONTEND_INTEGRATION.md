@@ -139,13 +139,23 @@ if (res.status === 503) {
 #### POST `/api/revise`
 Send user feedback and trigger a revision. Claude will revise the HTML and push an updated preview.
 
+Accepts an optional `section` field to scope the revision to a specific section by its `data-block-id`. This is used by the built-in click-to-edit feature (see below), but can also be called directly by the frontend.
+
 Same response codes as generate (200, 409, 503).
 
 ```js
+// Whole-page revision
 await fetch('http://localhost:3001/api/revise', {
   method: 'POST',
   headers: { 'Content-Type': 'application/json' },
   body: JSON.stringify({ feedback: 'Make the header blue and add a phone number' })
+});
+
+// Section-scoped revision (only revises the hero)
+await fetch('http://localhost:3001/api/revise', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({ feedback: 'Make the headline larger', section: 'hero-1' })
 });
 ```
 
@@ -257,7 +267,14 @@ JSON messages for UI state updates. Has heartbeat (ping/pong every 30s).
 - `"Retrying generation..."` — Auto-retry after timeout
 - `"Error detected — ready to retry"` — MCP error detected
 
-**Streaming preview**: During generation, Claude sends `preview:progress` messages with partial HTML as it builds the page section by section. Render these in the iframe for a "building up" effect. The final `preview:updated` replaces the progress HTML with the complete version. If you don't want the streaming effect, just ignore `preview:progress` and wait for `preview:updated`.
+**Progressive generation**: Claude generates in 3 visible phases:
+1. **Wireframe** — gray placeholder blocks showing page structure (sent via `preview:progress`)
+2. **Content & Layout** — real content, typography, images, neutral colors (sent via `preview:progress`)
+3. **Full Polish** — theme, accent colors, gradients, shadows, hover effects (sent via `preview:updated`)
+
+Render `preview:progress` messages in the iframe to show the page evolving from wireframe to polished design. The final `preview:updated` replaces everything with the complete version. If you don't want the progressive effect, just ignore `preview:progress` and wait for `preview:updated`.
+
+**Click-to-edit sections**: The preview HTML includes an injected editor script. Users can click any section in the iframe to open a floating edit bar. The edit bar sends a section-scoped `POST /api/revise` request directly — no frontend code needed. The editor script is automatically stripped from the exported HTML and persisted state. The frontend does NOT need to handle this — it's fully self-contained inside the iframe.
 
 **Full WebSocket handler:**
 ```js
