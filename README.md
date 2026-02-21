@@ -1,85 +1,83 @@
-# Akita 🐕 — Prompt Builder
+# Akita — Visual Website Builder with AI Agent
 
-A drag-and-drop frontend prompt builder for non-technical users. Fill out a funnel, get a markdown spec that a Claude Code agent can use to one-shot generate a website.
+Non-technical small business owners drag component blocks into a layout and watch Claude Code generate their website in real-time. Split-screen UI: drag-and-drop builder on the left, live Claude Code terminal on the right, bridged by an MCP server.
 
----
+## Architecture
 
-## What it does
+```
+Browser
+├── Builder Panel (left)          ──HTTP──→  Backend (Express :3001)
+├── Preview iframe (center)                  ├── State Store (in-memory)
+├── Feedback bar (bottom)                    ├── PTY Manager (node-pty → claude CLI)
+└── Terminal Panel (right)        ──WS──→    ├── Prompt Builder
+                                             └── MCP Server (stdio, 3 tools)
+```
 
-1. **Drag component blocks** from the sidebar (navbar, hero, product card, tokenomics, etc.) into the funnel
-2. **Pick a tech stack, theme, and accent color** for your website
-3. **Describe your business** in plain English
-4. **Add reference images** via upload or URL
-5. **Generate** — optionally calls Claude API to expand the spec, then outputs a `akita-prompt.md` file
+**Flow:** User drags blocks → clicks Generate → backend injects prompt into Claude Code PTY → Claude calls `get_layout()` MCP tool → generates HTML → calls `show_preview(html)` → backend pushes to frontend via WebSocket → preview renders in iframe.
 
----
+## Project Structure
 
-## Running the frontend
+```
+akita/
+├── src/                    # Backend (Express + WebSocket + PTY)
+│   ├── index.ts            # Server bootstrap
+│   ├── config.ts           # Ports, paths
+│   ├── state/              # In-memory state + REST endpoints
+│   ├── pty/                # PTY manager + terminal WebSocket bridge
+│   ├── prompt/             # Layout JSON → natural language prompt
+│   └── ws/                 # UI WebSocket (preview push)
+├── mcp-server/             # MCP stdio server (separate package)
+│   └── src/index.ts        # 3 tools: get_layout, show_preview, get_user_feedback
+├── frontend/               # React + Vite drag-and-drop builder
+├── test.html               # Standalone test UI (no React needed)
+├── PRD.md                  # Full project details, API contract, known issues
+└── FRONTEND_INTEGRATION.md # API docs for frontend integration
+```
+
+## Setup
 
 ```bash
-cd frontend
+# Install backend dependencies
 npm install
-npm run dev
+
+# Fix node-pty permissions (macOS ARM)
+chmod +x node_modules/node-pty/prebuilds/darwin-arm64/spawn-helper
+
+# Build MCP server
+cd mcp-server && npm install && npx tsc && cd ..
+
+# Install frontend dependencies
+cd frontend && npm install && cd ..
 ```
 
-App runs at `http://localhost:5173`.
+## Running
 
----
+```bash
+# Terminal 1: Backend
+npm run dev              # starts on :3001
 
-## App themes
-
-Switch between three UI themes in the top-right:
-
-| Theme | Description |
-|-------|-------------|
-| 🌙 Dark | Indigo/purple dark (default) |
-| ☀️ Light | Clean white |
-| 🐕 Akita | Orange/gold memecoin style |
-
----
-
-## Claude API (optional)
-
-Enter your `sk-ant-api03-…` key in the header. Without it the app still generates a local markdown spec. With it, Claude expands the spec into a detailed developer-ready prompt.
-
----
-
-## Teammate integration
-
-The teammate runs a **Claude Agents SDK** backend that receives the generated prompt and builds the UI.
-
-### Integration point
-
-In `frontend/src/App.jsx`, set the endpoint:
-
-```js
-const SAVE_ENDPOINT = 'http://localhost:3001/api/save-prompt'
+# Terminal 2: Frontend
+cd frontend && npm run dev   # starts on :5173
 ```
 
-The frontend will `POST { markdown }` to that URL on every generate. The backend writes it to `/tmp/akita-prompt.md`.
+The MCP server is auto-spawned by Claude Code via `mcp-config.json` (generated at backend startup).
 
-### Claude Code — Ctrl+G
+## Test UI
 
-A custom command and keybinding are pre-configured:
+Open http://localhost:3001/test for a standalone test UI with terminal, config panel, and preview iframe. No React frontend needed.
 
-- **`~/.claude/commands/generate-ui.md`** — `/generate-ui <path>` tells Claude to build a full UI from the spec file
-- **`~/.claude/keybindings.json`** — **Ctrl+G** fires `/generate-ui /tmp/akita-prompt.md`
+## API
 
-Teammate workflow:
-1. User generates prompt in Akita → saved to `/tmp/akita-prompt.md`
-2. Teammate presses **Ctrl+G** in Claude Code → Claude builds the UI
+See [FRONTEND_INTEGRATION.md](FRONTEND_INTEGRATION.md) for the full API contract.
 
----
+Key endpoints:
+- `POST /api/pty/start` — Start Claude Code terminal
+- `POST /api/state/layout` — Update page layout
+- `POST /api/generate` — Trigger website generation
+- `POST /api/revise` — Send feedback and trigger revision
+- `ws://localhost:3001/ws/terminal` — Terminal I/O (xterm.js)
+- `ws://localhost:3001/ws/ui` — Preview updates (JSON)
 
-## Project structure
+## Status
 
-```
-interfaceshackathon/
-├── frontend/               # Vite + React app
-│   ├── src/
-│   │   ├── App.jsx         # Main app — SAVE_ENDPOINT integration hook here
-│   │   └── App.css         # CSS custom properties for all 3 themes
-│   └── vite.config.js
-├── task.md                 # Original requirements
-└── README.md
-```
+Backend, MCP server, and test UI are complete and tested end-to-end. Frontend React integration is in progress — see [PRD.md](PRD.md) for full status.

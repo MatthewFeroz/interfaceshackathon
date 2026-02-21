@@ -404,6 +404,35 @@ export default function App() {
     reader.readAsDataURL(file)
   }
 
+  // ── Build PageLayout JSON for the backend (/api/state/layout) ───────────────
+  // Returns the shape the backend expects. See FRONTEND_INTEGRATION.md for docs.
+  //
+  //   { blocks: [{ id, type, props }], theme, accentColor, techStack, businessDescription }
+  //
+  const buildPageLayout = useCallback(() => {
+    // Merge all dropped blocks from every funnel section into a flat array.
+    // block.id from COMPONENT_GROUPS (e.g. "hero", "pricing") becomes the `type`.
+    let counter = 0
+    const blocks = Object.values(droppedBlocks)
+      .flat()
+      .map(b => ({
+        id: `${b.id}-${++counter}`,
+        type: b.id,
+        props: {},
+      }))
+
+    const themeObj = FUNNEL_THEMES.find(t => t.id === selectedTheme)
+    const techLabels = TECH_STACKS.filter(t => selectedTech.includes(t.id)).map(t => t.label)
+
+    return {
+      blocks,
+      theme: themeObj?.label || selectedTheme,
+      accentColor,
+      techStack: techLabels.length ? techLabels : undefined,
+      businessDescription: productDetails || undefined,
+    }
+  }, [droppedBlocks, selectedTheme, accentColor, selectedTech, productDetails])
+
   // ── Build the markdown spec ─────────────────────────────────────────────────
   const buildMarkdown = useCallback(() => {
     const techList = TECH_STACKS.filter(t => selectedTech.includes(t.id)).map(t => t.label)

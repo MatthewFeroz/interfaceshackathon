@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Akita – Test UI</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/xterm@5.3.0/css/xterm.css">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: system-ui, sans-serif; background: #0f1117; color: #e2e8f0; height: 100vh; display: flex; flex-direction: column; }
+    header { padding: 8px 20px; background: #1a1f2e; border-bottom: 1px solid #2a3040; display: flex; align-items: center; gap: 12px; }
+    header h1 { font-size: 16px; font-weight: 600; }
+    .status { font-size: 11px; padding: 3px 8px; border-radius: 10px; background: #2a3040; }
+    .status.ok { background: #064e3b; color: #6ee7b7; }
+    .status.err { background: #7f1d1d; color: #fca5a5; }
+    main { flex: 1; display: flex; overflow: hidden; }
+
+    /* Left: config ~20% */
+    .config-panel { flex: 0 0 280px; display: flex; flex-direction: column; overflow: hidden; border-right: 1px solid #2a3040; }
+    .config-panel .panel-header { padding: 6px 12px; background: #1a1f2e; border-bottom: 1px solid #2a3040; font-size: 11px; font-weight: 600; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; }
+    .config-panel .controls { padding: 12px; display: flex; flex-direction: column; gap: 8px; overflow-y: auto; flex: 1; }
+
+    /* Middle: preview ~60% */
+    .preview-panel { flex: 1; display: flex; flex-direction: column; overflow: hidden; border-right: 1px solid #2a3040; }
+    .preview-panel .panel-header { padding: 6px 12px; background: #1a1f2e; border-bottom: 1px solid #2a3040; font-size: 11px; font-weight: 600; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; display: flex; align-items: center; justify-content: space-between; }
+    .preview-frame { flex: 1; border: none; background: white; }
+    .feedback-bar { display: flex; gap: 8px; padding: 8px 12px; background: #1a1f2e; border-top: 1px solid #2a3040; }
+    .feedback-bar input { flex: 1; padding: 8px 12px; background: #0f1117; border: 1px solid #2a3040; color: #e2e8f0; border-radius: 6px; font-size: 13px; }
+    .feedback-bar input::placeholder { color: #475569; }
+
+    /* Right: terminal ~20% */
+    .terminal-panel { flex: 0 0 300px; display: flex; flex-direction: column; overflow: hidden; }
+    .terminal-panel .panel-header { padding: 6px 12px; background: #1a1f2e; border-bottom: 1px solid #2a3040; font-size: 11px; font-weight: 600; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; }
+    #terminal-container { flex: 1; padding: 4px; background: #000; overflow: hidden; }
+
+    button { padding: 6px 14px; border: none; border-radius: 5px; font-size: 12px; font-weight: 600; cursor: pointer; white-space: nowrap; }
+    button:disabled { opacity: 0.5; cursor: not-allowed; }
+    .btn-primary { background: #6366f1; color: white; }
+    .btn-primary:hover:not(:disabled) { background: #4f46e5; }
+    .btn-orange { background: #F7931A; color: white; }
+    .btn-orange:hover:not(:disabled) { background: #e0840f; }
+    .btn-sm { padding: 6px 12px; font-size: 11px; }
+    .btn-gray { background: #374151; color: white; }
+    .btn-gray:hover:not(:disabled) { background: #4b5563; }
+    textarea { width: 100%; padding: 6px; background: #0f1117; border: 1px solid #2a3040; color: #e2e8f0; border-radius: 5px; font-size: 11px; font-family: monospace; resize: vertical; }
+    label { font-size: 11px; color: #64748b; text-transform: uppercase; letter-spacing: 0.3px; }
+    .btn-row { display: flex; gap: 6px; flex-wrap: wrap; }
+    .log { padding: 6px 8px; background: #0f1117; border: 1px solid #2a3040; border-radius: 5px; font-size: 10px; font-family: monospace; max-height: 120px; overflow-y: auto; white-space: pre-wrap; word-break: break-all; color: #64748b; }
+    .empty-preview { flex: 1; display: flex; align-items: center; justify-content: center; color: #334155; font-size: 14px; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Akita</h1>
+    <span id="health" class="status">checking...</span>
+    <span id="pty-status" class="status">PTY: off</span>
+    <span id="ws-status" class="status">WS: --</span>
+  </header>
+  <main>
+    <!-- Left: Config -->
+    <div class="config-panel">
+      <div class="panel-header">Config</div>
+      <div class="controls">
+        <div class="btn-row">
+          <button class="btn-primary btn-sm" onclick="startPty()">Start PTY</button>
+          <button class="btn-orange btn-sm" onclick="generate()">Generate</button>
+        </div>
+
+        <label>Layout JSON</label>
+        <textarea id="layout" rows="12">{
+  "blocks": [
+    {"id":"hero-1","type":"hero","props":{"heading":"Welcome to Paws & Claws","subheading":"Your neighborhood pet store"}},
+    {"id":"features-1","type":"features","props":{"items":["Grooming","Boarding","Training"]}},
+    {"id":"footer-1","type":"footer","props":{"text":"© 2026 Paws & Claws"}}
+  ],
+  "theme": "Vibrant",
+  "accentColor": "#F7931A",
+  "businessDescription": "A family-owned pet store in Austin, TX."
+}</textarea>
+        <button class="btn-gray btn-sm" onclick="postLayout()">Update Layout</button>
+
+        <label>Log</label>
+        <div id="log" class="log"></div>
+      </div>
+    </div>
+
+    <!-- Middle: Preview -->
+    <div class="preview-panel">
+      <div class="panel-header">
+        <span>Preview</span>
+        <span id="preview-status" style="font-size:10px;color:#475569;">Waiting for generate...</span>
+      </div>
+      <iframe id="preview" class="preview-frame"></iframe>
+      <div class="feedback-bar">
+        <input id="feedback" type="text" placeholder="Type feedback and press Enter to revise..." onkeydown="if(event.key==='Enter')postFeedback()">
+        <button class="btn-orange btn-sm" onclick="postFeedback()">Revise</button>
+      </div>
+    </div>
+
+    <!-- Right: Terminal -->
+    <div class="terminal-panel">
+      <div class="panel-header">Terminal</div>
+      <div id="terminal-container"></div>
+    </div>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/xterm@5.3.0/lib/xterm.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xterm-addon-fit@0.8.0/lib/xterm-addon-fit.min.js"></script>
+  <script>
+    const API = 'http://localhost:3001';
+    const logEl = document.getElementById('log');
+    function log(msg) {
+      const ts = new Date().toLocaleTimeString();
+      logEl.textContent += `[${ts}] ${msg}\n`;
+      logEl.scrollTop = logEl.scrollHeight;
+    }
+
+    // Health check
+    async function checkHealth() {
+      try {
+        await fetch(`${API}/api/health`).then(r => r.json());
+        document.getElementById('health').textContent = 'OK';
+        document.getElementById('health').className = 'status ok';
+        log('Backend OK');
+      } catch (e) {
+        document.getElementById('health').textContent = 'DOWN';
+        document.getElementById('health').className = 'status err';
+        log('Backend down: ' + e.message);
+      }
+    }
+    checkHealth();
+
+    // Terminal
+    const term = new window.Terminal({
+      cursorBlink: true,
+      fontSize: 11,
+      theme: { background: '#000000' },
+    });
+    const fitAddon = new window.FitAddon.FitAddon();
+    term.loadAddon(fitAddon);
+    term.open(document.getElementById('terminal-container'));
+    fitAddon.fit();
+    window.addEventListener('resize', () => fitAddon.fit());
+
+    // Terminal WebSocket
+    let termWs;
+    function connectTerminalWs() {
+      termWs = new WebSocket(`ws://localhost:3001/ws/terminal`);
+      termWs.onopen = () => {
+        document.getElementById('ws-status').textContent = 'WS';
+        document.getElementById('ws-status').className = 'status ok';
+        log('Terminal WS connected');
+        termWs.send(JSON.stringify({ type: 'resize', cols: term.cols, rows: term.rows }));
+      };
+      termWs.onmessage = (e) => { term.write(e.data); };
+      termWs.onclose = () => {
+        document.getElementById('ws-status').textContent = 'WS: --';
+        document.getElementById('ws-status').className = 'status err';
+      };
+      termWs.onerror = () => { log('Terminal WS error'); };
+    }
+    connectTerminalWs();
+
+    term.onData((data) => {
+      if (termWs && termWs.readyState === WebSocket.OPEN) termWs.send(data);
+    });
+    term.onResize(({ cols, rows }) => {
+      if (termWs && termWs.readyState === WebSocket.OPEN) {
+        termWs.send(JSON.stringify({ type: 'resize', cols, rows }));
+      }
+    });
+
+    // UI WebSocket
+    const uiWs = new WebSocket('ws://localhost:3001/ws/ui');
+    uiWs.onmessage = (e) => {
+      try {
+        const msg = JSON.parse(e.data);
+        if (msg.type === 'preview:updated') {
+          renderPreview(msg.payload.html);
+        } else if (msg.type === 'init' && msg.payload.previewHtml) {
+          renderPreview(msg.payload.previewHtml);
+        }
+      } catch (err) {
+        log('WS parse error: ' + err.message);
+      }
+    };
+
+    function renderPreview(html) {
+      document.getElementById('preview').srcdoc = html;
+      document.getElementById('preview-status').textContent = 'Updated ' + new Date().toLocaleTimeString();
+      log('Preview updated (' + html.length + ' chars)');
+    }
+
+    // API calls
+    async function startPty() {
+      log('Starting PTY...');
+      try {
+        const d = await fetch(`${API}/api/pty/start`, { method: 'POST' }).then(r => r.json());
+        if (d.ok) {
+          document.getElementById('pty-status').textContent = 'PTY';
+          document.getElementById('pty-status').className = 'status ok';
+          log('PTY started');
+        } else {
+          log('PTY error: ' + JSON.stringify(d));
+        }
+      } catch (e) { log('PTY failed: ' + e.message); }
+    }
+
+    async function postLayout() {
+      try {
+        const layout = JSON.parse(document.getElementById('layout').value);
+        await fetch(`${API}/api/state/layout`, {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(layout)
+        });
+        log('Layout updated');
+      } catch (e) { log('Layout error: ' + e.message); }
+    }
+
+    async function generate() {
+      log('Generating...');
+      await postLayout();
+      try {
+        const d = await fetch(`${API}/api/generate`, { method: 'POST' }).then(r => r.json());
+        log(d.ok ? 'Generate started' : 'Generate error: ' + JSON.stringify(d));
+        document.getElementById('preview-status').textContent = 'Generating...';
+      } catch (e) { log('Generate failed: ' + e.message); }
+    }
+
+    async function postFeedback() {
+      const el = document.getElementById('feedback');
+      const feedback = el.value.trim();
+      if (!feedback) return;
+      log('Revising: ' + feedback);
+      document.getElementById('preview-status').textContent = 'Revising...';
+      el.value = '';
+      try {
+        await fetch(`${API}/api/revise`, {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ feedback })
+        });
+      } catch (e) { log('Revise failed: ' + e.message); }
+    }
+  </script>
+</body>
+</html>
