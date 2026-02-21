@@ -1,0 +1,7 @@
+# Teammate backend (not tracked here)
+node_modules/
+akita-prompt.md
+temp-prompt.md
+/tmp/akita-prompt.md
+.env
+*.log
