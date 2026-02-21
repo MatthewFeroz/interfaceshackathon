@@ -14,6 +14,7 @@ function findClaude(): string {
 export class PtyManager extends EventEmitter {
   private proc: pty.IPty | null = null;
   private _ready = false;
+  private _suppressEcho = false;
 
   isRunning(): boolean {
     return this.proc !== null;
@@ -57,7 +58,10 @@ export class PtyManager extends EventEmitter {
     });
 
     this.proc.onData((data: string) => {
-      this.emit('data', data);
+      // When suppressing prompt echo, swallow data until suppression ends
+      if (!this._suppressEcho) {
+        this.emit('data', data);
+      }
 
       // Detect when Claude Code is ready (shows the ">" prompt or idle)
       if (!this._ready && data.includes('>')) {
@@ -88,13 +92,18 @@ export class PtyManager extends EventEmitter {
     if (!this.proc) {
       throw new Error('PTY not running');
     }
-    // Write the prompt text, then send Enter after a brief delay
-    // to let the terminal input buffer accept the full text
+    // Suppress echo so the terminal doesn't show the raw prompt text
+    this._suppressEcho = true;
+
     this.proc.write(text);
     setTimeout(() => {
       if (this.proc) {
         this.proc.write('\r');
       }
+      // Stop suppressing ~2s after Enter — echo is done, Claude is working
+      setTimeout(() => {
+        this._suppressEcho = false;
+      }, 2000);
     }, 500);
   }
 
