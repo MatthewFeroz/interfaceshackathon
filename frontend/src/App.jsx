@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from 'react'
+import { useState, useRef, useCallback, useEffect } from 'react'
 import {
   DndContext,
   DragOverlay,
@@ -11,16 +11,8 @@ import {
 import TerminalPanel from './TerminalPanel'
 import './App.css'
 
-// ─────────────────────────────────────────────────────────────────────────────
-// TEAMMATE INTEGRATION POINT
-// Your backend should expose:
-//   POST /api/save-prompt   { markdown: string } → writes temp-prompt.md
-//   GET  /api/prompt        → returns the current temp-prompt.md content
-//
-// Set SAVE_ENDPOINT to your server URL, e.g. 'http://localhost:3001/api/save-prompt'
-// When undefined the app still works — it just won't persist the file to disk.
-// ─────────────────────────────────────────────────────────────────────────────
-const SAVE_ENDPOINT = undefined // e.g. 'http://localhost:3001/api/save-prompt'
+const API_BASE = 'http://localhost:3001'
+const UI_WS = 'ws://localhost:3001/ws/ui'
 
 // ─── Component block definitions ────────────────────────────────────────────
 
@@ -157,7 +149,7 @@ const FUNNEL_THEMES = [
   },
   {
     id: 'akita',
-    label: 'Akita 🐕',
+    label: 'Akita',
     bg: '#0D0500',
     text: '#FFF3E0',
     accent: '#F7931A',
@@ -172,7 +164,7 @@ const ACCENT_COLORS = [
   '#F7931A', '#FFD700',
 ]
 
-// App-level UI themes (affects the PromptForge / Akita app itself)
+// App-level UI themes (affects the Akita app itself)
 const APP_THEMES = [
   { id: 'dark',  label: 'Dark' },
   { id: 'light', label: 'Light' },
@@ -289,55 +281,10 @@ function ImageSection({ images, onAddUrl, onUpload, onRemove }) {
   )
 }
 
-// ─── Output Modal ─────────────────────────────────────────────────────────────
-
-function OutputModal({ content, onClose }) {
-  const [copied, setCopied] = useState(false)
-
-  const handleCopy = () => {
-    navigator.clipboard.writeText(content)
-    setCopied(true)
-    setTimeout(() => setCopied(false), 2000)
-  }
-
-  const handleDownload = () => {
-    const blob = new Blob([content], { type: 'text/markdown' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = 'akita-prompt.md'
-    a.click()
-    URL.revokeObjectURL(url)
-  }
-
-  return (
-    <div className="modal-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
-      <div className="modal">
-        <div className="modal-header">
-          <div className="modal-title">akita-prompt.md</div>
-          <button className="modal-close" onClick={onClose}>×</button>
-        </div>
-        <div className="modal-body">
-          <pre className="modal-code">{content}</pre>
-        </div>
-        <div className="modal-footer">
-          <button className="btn-copy" onClick={handleCopy}>
-            {copied ? 'Copied' : 'Copy'}
-          </button>
-          <button className="btn-download-modal" onClick={handleDownload}>
-            Download
-          </button>
-        </div>
-      </div>
-    </div>
-  )
-}
-
 // ─── Main App ─────────────────────────────────────────────────────────────────
 
 export default function App() {
   const [appTheme, setAppTheme] = useState('dark')
-  const [apiKey, setApiKey]     = useState('')
   const [activeBlock, setActiveBlock] = useState(null)
 
   // Funnel state
@@ -353,16 +300,14 @@ export default function App() {
     tech: [], theme: [], product: [], images: [],
   })
 
-  // Output / UI state
-  const [output,    setOutput]    = useState('')
-  const [showModal, setShowModal] = useState(false)
-  const [loading,   setLoading]   = useState(false)
-  const [toast,     setToast]     = useState('')
-  const [savedToServer, setSavedToServer] = useState(false)
+  // Backend state
+  const [previewHtml,    setPreviewHtml]    = useState('')
+  const [feedback,       setFeedback]       = useState('')
+  const [loading,        setLoading]        = useState(false)
+  const [toast,          setToast]          = useState('')
 
   // Terminal
-  const terminalRef  = useRef(null)
-  const [terminalOpen, setTerminalOpen] = useState(false)
+  const terminalRef = useRef(null)
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } })
@@ -408,13 +353,7 @@ export default function App() {
   }
 
   // ── Build PageLayout JSON for the backend (/api/state/layout) ───────────────
-  // Returns the shape the backend expects. See FRONTEND_INTEGRATION.md for docs.
-  //
-  //   { blocks: [{ id, type, props }], theme, accentColor, techStack, businessDescription }
-  //
   const buildPageLayout = useCallback(() => {
-    // Merge all dropped blocks from every funnel section into a flat array.
-    // block.id from COMPONENT_GROUPS (e.g. "hero", "pricing") becomes the `type`.
     let counter = 0
     const blocks = Object.values(droppedBlocks)
       .flat()
@@ -436,179 +375,101 @@ export default function App() {
     }
   }, [droppedBlocks, selectedTheme, accentColor, selectedTech, productDetails])
 
-  // ── Build the markdown spec ─────────────────────────────────────────────────
-  const buildMarkdown = useCallback(() => {
-    const techList = TECH_STACKS.filter(t => selectedTech.includes(t.id)).map(t => t.label)
-    const themeObj = FUNNEL_THEMES.find(t => t.id === selectedTheme)
-    const allDropped = Object.entries(droppedBlocks)
-      .flatMap(([, blocks]) => blocks.map(b => b.label))
-    const imageLines = images.map(img =>
-      img.type === 'url' ? `- URL: ${img.src}` : `- Uploaded file: ${img.name}`
-    )
-    const componentSection = allDropped.length
-      ? `## Components to Include\n${allDropped.map(l => `- ${l}`).join('\n')}`
-      : ''
-    const imageSection = imageLines.length
-      ? `## Images\n${imageLines.join('\n')}`
-      : ''
-    const memecoinNote = themeObj?.isMemecoin
-      ? '\n## Memecoin / Akita Theme Notes\n- Use orange (#F7931A) and gold (#FFD700) as primary brand colors\n- Include dog/paw imagery or ASCII art where appropriate\n- Playful, energetic tone for community-driven feel\n- Add subtle crypto/web3 UI patterns (gradient buttons, glow effects)'
-      : ''
-
-    return `# Akita — Frontend Prompt Specification
-> Generated by Akita Prompt Builder
-
-## Tech Stack
-${techList.length ? techList.map(t => `- ${t}`).join('\n') : '- Not specified'}
-
-## Theme & Visual Style
-- Theme: ${themeObj?.label || selectedTheme}
-- Background: ${themeObj?.bg || '#0f1117'}
-- Text Color: ${themeObj?.text || '#e2e8f0'}
-- Accent Color: ${accentColor}
-${memecoinNote}
-
-## Product / Business Details
-${productDetails || 'Not provided.'}
-
-${componentSection}
-
-${imageSection}
-
-## Implementation Notes
-- Design for non-technical users (mom & pop / small business / community)
-- Responsive design: mobile-first, works on all screen sizes
-- Keep navigation simple and intuitive
-- Use the specified accent color for all CTAs and key highlights
-- Prioritize clear visual hierarchy and readability
-`.trim()
-  }, [selectedTech, selectedTheme, accentColor, productDetails, images, droppedBlocks])
-
-  // ── Save prompt to server (teammate integration point) ──────────────────────
-  const saveToServer = async (markdown) => {
-    if (!SAVE_ENDPOINT) return false
-    try {
-      const res = await fetch(SAVE_ENDPOINT, {
+  // ── Sync layout to backend (debounced) ──────────────────────────────────────
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      const layout = buildPageLayout()
+      fetch(`${API_BASE}/api/state/layout`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ markdown }),
+        body: JSON.stringify(layout),
+      }).catch(() => {})
+    }, 500)
+    return () => clearTimeout(timer)
+  }, [buildPageLayout])
+
+  // ── UI WebSocket for preview updates ────────────────────────────────────────
+  useEffect(() => {
+    let ws
+    let retryTimer
+
+    function connect() {
+      ws = new WebSocket(UI_WS)
+
+      ws.onmessage = (e) => {
+        try {
+          const msg = JSON.parse(e.data)
+          if (msg.type === 'preview:updated' && msg.payload?.html) {
+            setPreviewHtml(msg.payload.html)
+          }
+          if (msg.type === 'init' && msg.payload?.previewHtml) {
+            setPreviewHtml(msg.payload.previewHtml)
+          }
+        } catch {}
+      }
+
+      ws.onclose = () => {
+        retryTimer = setTimeout(connect, 3000)
+      }
+
+      ws.onerror = () => {
+        ws.close()
+      }
+    }
+
+    connect()
+
+    return () => {
+      clearTimeout(retryTimer)
+      ws?.close()
+    }
+  }, [])
+
+
+  // ── Generate handler ────────────────────────────────────────────────────────
+  const handleGenerate = async () => {
+    setLoading(true)
+    try {
+      // Sync layout first
+      await fetch(`${API_BASE}/api/state/layout`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(buildPageLayout()),
       })
-      return res.ok
+
+      const res = await fetch(`${API_BASE}/api/generate`, { method: 'POST' })
+      if (!res.ok) {
+        const err = await res.json()
+        showToast(err.error || 'Generate failed')
+      } else {
+        showToast('Generating — watch the terminal')
+      }
     } catch {
-      return false
+      showToast('Cannot reach backend')
+    } finally {
+      setLoading(false)
     }
   }
 
-  // ── Main generate handler (streaming) ─────────────────────────────────────
-  const handleGenerate = async () => {
-    const term = terminalRef.current
-    const md   = buildMarkdown()
-
-    // Open terminal
-    setTerminalOpen(true)
-
-    // ── WS mode: hand off to teammate's backend terminal ────────────────────
-    if (term?.hasWS()) {
-      // Save the spec first so the backend can read it
-      if (SAVE_ENDPOINT) await saveToServer(md)
-      else setOutput(md)   // keep it accessible via View Output
-      term.connectWS()
-      return
-    }
-
-    // ── Log mode: stream Claude API output inline ────────────────────────────
-    term?.reset()
-    term?.log('info', 'Collecting form data...')
-    term?.log('info', `Built spec — ${md.length} chars`)
-
-    // Persist to server (teammate integration)
-    if (SAVE_ENDPOINT) {
-      term?.log('info', `Saving to server: ${SAVE_ENDPOINT}`)
-      const saved = await saveToServer(md)
-      if (saved) {
-        setSavedToServer(true)
-        term?.log('ok', 'Saved to server as akita-prompt.md')
-      } else {
-        term?.log('warn', 'Server save failed — check SAVE_ENDPOINT')
-      }
-    }
-
-    if (!apiKey.trim()) {
-      term?.log('warn', 'No Claude API key — outputting local markdown')
-      term?.log('ok',   'Done. Click "View Output" to see the spec.')
-      setOutput(md)
-      return
-    }
-
+  // ── Revise handler ──────────────────────────────────────────────────────────
+  const handleRevise = async () => {
+    if (!feedback.trim()) return
     setLoading(true)
-    term?.log('info', 'Calling Claude API (streaming)...')
-    term?.log('stream', '')
-
     try {
-      const res = await fetch('https://api.anthropic.com/v1/messages', {
+      const res = await fetch(`${API_BASE}/api/revise`, {
         method: 'POST',
-        headers: {
-          'x-api-key': apiKey,
-          'anthropic-version': '2023-06-01',
-          'content-type': 'application/json',
-          'anthropic-dangerous-direct-browser-calls': 'true',
-        },
-        body: JSON.stringify({
-          model: 'claude-opus-4-6',
-          max_tokens: 4096,
-          stream: true,
-          system: `You are a senior frontend developer assistant. A non-technical user has filled out a prompt specification form to describe the website they want. Your job is to take their input and produce a clear, detailed, well-structured markdown specification file that a developer (or a Claude Code agent) can use to one-shot build the frontend. Expand on the user's ideas, infer sensible defaults, and add helpful implementation notes. Output ONLY the markdown content — no preamble, no explanation.`,
-          messages: [{
-            role: 'user',
-            content: `Here is my website specification:\n\n${md}\n\nPlease expand this into a comprehensive developer-ready markdown prompt specification.`,
-          }],
-        }),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ feedback: feedback.trim() }),
       })
-
       if (!res.ok) {
         const err = await res.json()
-        throw new Error(err.error?.message || `HTTP ${res.status}`)
+        showToast(err.error || 'Revise failed')
+      } else {
+        setFeedback('')
+        showToast('Revising — watch the terminal')
       }
-
-      // ── Parse SSE stream ──────────────────────────────────────────────────
-      const reader  = res.body.getReader()
-      const decoder = new TextDecoder()
-      let resultText = ''
-
-      while (true) {
-        const { done, value } = await reader.read()
-        if (done) break
-        const raw = decoder.decode(value, { stream: true })
-        for (const line of raw.split('\n')) {
-          if (!line.startsWith('data: ')) continue
-          const data = line.slice(6).trim()
-          if (!data || data === '[DONE]') continue
-          try {
-            const parsed = JSON.parse(data)
-            if (parsed.type === 'content_block_delta' && parsed.delta?.type === 'text_delta') {
-              const chunk = parsed.delta.text
-              resultText += chunk
-              term?.writeChunk(chunk)
-            }
-          } catch { /* skip malformed chunks */ }
-        }
-      }
-
-      term?.flushStream()
-
-      // Save expanded spec to server too
-      if (SAVE_ENDPOINT) await saveToServer(resultText)
-
-      term?.log('ok', `Streaming complete — ${resultText.length} chars written`)
-      term?.log('ok', 'Spec saved as akita-prompt.md  ·  Press Ctrl+G in Claude Code to build UI')
-
-      setOutput(resultText || md)
-      showToast('Done — check View Output')
-    } catch (err) {
-      term?.flushStream()
-      term?.log('error', err.message)
-      setOutput(md)
-      showToast(`Claude error: ${err.message}`)
+    } catch {
+      showToast('Cannot reach backend')
     } finally {
       setLoading(false)
     }
@@ -646,19 +507,6 @@ ${imageSection}
               ))}
             </div>
 
-            <div className="api-key-wrapper">
-              <span className="api-key-label">Claude API Key</span>
-              <input
-                type="password"
-                className="api-key-input"
-                placeholder="sk-ant-api03-… (optional)"
-                value={apiKey}
-                onChange={e => setApiKey(e.target.value)}
-                autoComplete="off"
-                data-1p-ignore
-                data-lpignore="true"
-              />
-            </div>
           </div>
         </header>
 
@@ -689,21 +537,6 @@ ${imageSection}
               <p className="funnel-desc">
                 Pick a stack, choose a look, describe your business, and drop in components.
               </p>
-
-              {savedToServer && (
-                <div className="agent-banner">
-                  <span className="agent-banner-icon">→</span>
-                  <span>
-                    <strong>akita-prompt.md saved to server</strong> — your teammate can now run
-                    the Claude agent (or press <kbd style={{
-                      padding: '1px 5px',
-                      border: '1px solid currentColor',
-                      borderRadius: 4,
-                      fontSize: 11,
-                    }}>Ctrl+G</kbd> in Claude Code).
-                  </span>
-                </div>
-              )}
 
               {/* ── 1: Tech Stack ── */}
               <DroppableSection id="tech">
@@ -829,8 +662,48 @@ ${imageSection}
             </div>
           </main>
 
-          {/* ── Terminal Panel (right side) ── */}
-          <TerminalPanel ref={terminalRef} isOpen={terminalOpen} />
+          {/* ── Right Panel: Preview + Terminal ── */}
+          <div className="right-panel">
+            {/* Preview iframe */}
+            <div className={`preview-panel ${previewHtml ? 'has-preview' : ''}`}>
+              {previewHtml ? (
+                <iframe
+                  className="preview-iframe"
+                  srcDoc={previewHtml}
+                  title="Preview"
+                  sandbox="allow-scripts allow-same-origin"
+                />
+              ) : (
+                <div className="preview-empty">
+                  <div className="preview-empty-text">Preview will appear here</div>
+                  <div className="preview-empty-hint">Drop blocks and click Generate</div>
+                </div>
+              )}
+
+              {/* Revision bar */}
+              {previewHtml && (
+                <div className="revision-bar">
+                  <input
+                    className="revision-input"
+                    placeholder="Describe changes..."
+                    value={feedback}
+                    onChange={e => setFeedback(e.target.value)}
+                    onKeyDown={e => e.key === 'Enter' && handleRevise()}
+                  />
+                  <button
+                    className="btn-revise"
+                    onClick={handleRevise}
+                    disabled={loading || !feedback.trim()}
+                  >
+                    Revise
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* Terminal */}
+            <TerminalPanel ref={terminalRef} isOpen={true} />
+          </div>
         </div>
 
         {/* ── Bottom Bar ── */}
@@ -841,11 +714,6 @@ ${imageSection}
               : 'Ready when you are'}
           </div>
           <div className="bottom-actions">
-            {output && (
-              <button className="btn-secondary" onClick={() => setShowModal(true)}>
-                View Output
-              </button>
-            )}
             <button
               className="btn-generate"
               onClick={handleGenerate}
@@ -869,7 +737,6 @@ ${imageSection}
         )}
       </DragOverlay>
 
-      {showModal && <OutputModal content={output} onClose={() => setShowModal(false)} />}
       {toast && <div className="toast">{toast}</div>}
     </DndContext>
   )

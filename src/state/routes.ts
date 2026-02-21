@@ -96,3 +96,9 @@ stateRouter.post('/feedback', (req, res) => {
   store.setFeedback(req.body.feedback);
   res.json({ ok: true });
 });
+
+// Status reset — use when status is stuck
+stateRouter.post('/reset-status', (_req, res) => {
+  store.setStatus('idle');
+  res.json({ ok: true });
+});
