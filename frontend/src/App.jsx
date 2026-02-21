@@ -28,89 +28,89 @@ const COMPONENT_GROUPS = [
   {
     label: 'Navigation',
     blocks: [
-      { id: 'navbar',       icon: '🧭', label: 'Navbar' },
-      { id: 'sidebar-nav',  icon: '📋', label: 'Sidebar Nav' },
-      { id: 'breadcrumb',   icon: '›',  label: 'Breadcrumb' },
-      { id: 'tabs',         icon: '🗂️', label: 'Tabs' },
+      { id: 'navbar',       label: 'Navbar' },
+      { id: 'sidebar-nav',  label: 'Sidebar Nav' },
+      { id: 'breadcrumb',   label: 'Breadcrumb' },
+      { id: 'tabs',         label: 'Tabs' },
     ],
   },
   {
     label: 'Buttons',
     blocks: [
-      { id: 'primary-btn',   icon: '🔵', label: 'Primary Button' },
-      { id: 'secondary-btn', icon: '⬜', label: 'Secondary Button' },
-      { id: 'icon-btn',      icon: '🔘', label: 'Icon Button' },
-      { id: 'cta-btn',       icon: '⚡', label: 'CTA Button' },
+      { id: 'primary-btn',   label: 'Primary Button' },
+      { id: 'secondary-btn', label: 'Secondary Button' },
+      { id: 'icon-btn',      label: 'Icon Button' },
+      { id: 'cta-btn',       label: 'CTA' },
     ],
   },
   {
     label: 'Content',
     blocks: [
-      { id: 'hero',        icon: '🦸', label: 'Hero Section' },
-      { id: 'card',        icon: '🃏', label: 'Card' },
-      { id: 'testimonial', icon: '💬', label: 'Testimonial' },
-      { id: 'pricing',     icon: '💲', label: 'Pricing Table' },
-      { id: 'faq',         icon: '❓', label: 'FAQ Section' },
-      { id: 'blog',        icon: '📝', label: 'Blog Grid' },
+      { id: 'hero',        label: 'Hero' },
+      { id: 'card',        label: 'Card' },
+      { id: 'testimonial', label: 'Testimonial' },
+      { id: 'pricing',     label: 'Pricing Table' },
+      { id: 'faq',         label: 'FAQ' },
+      { id: 'blog',        label: 'Blog Grid' },
     ],
   },
   {
     label: 'Media',
     blocks: [
-      { id: 'image-gallery', icon: '🖼️', label: 'Image Gallery' },
-      { id: 'video-embed',   icon: '▶️', label: 'Video Embed' },
-      { id: 'carousel',      icon: '🎠', label: 'Carousel' },
-      { id: 'avatar',        icon: '👤', label: 'Avatar' },
+      { id: 'image-gallery', label: 'Gallery' },
+      { id: 'video-embed',   label: 'Video' },
+      { id: 'carousel',      label: 'Carousel' },
+      { id: 'avatar',        label: 'Avatar' },
     ],
   },
   {
     label: 'Forms',
     blocks: [
-      { id: 'contact-form', icon: '📧', label: 'Contact Form' },
-      { id: 'newsletter',   icon: '📨', label: 'Newsletter' },
-      { id: 'search-bar',   icon: '🔍', label: 'Search Bar' },
-      { id: 'login-form',   icon: '🔐', label: 'Login Form' },
+      { id: 'contact-form', label: 'Contact Form' },
+      { id: 'newsletter',   label: 'Newsletter' },
+      { id: 'search-bar',   label: 'Search' },
+      { id: 'login-form',   label: 'Login' },
     ],
   },
   {
     label: 'Layout',
     blocks: [
-      { id: 'footer',  icon: '⬇️', label: 'Footer' },
-      { id: 'sidebar', icon: '▫️', label: 'Sidebar Panel' },
-      { id: 'grid',    icon: '⊞',  label: 'Grid Layout' },
-      { id: 'divider', icon: '─',   label: 'Divider' },
+      { id: 'footer',  label: 'Footer' },
+      { id: 'sidebar', label: 'Sidebar' },
+      { id: 'grid',    label: 'Grid' },
+      { id: 'divider', label: 'Divider' },
     ],
   },
   {
     label: 'E-Commerce',
     blocks: [
-      { id: 'product-card', icon: '🛍️', label: 'Product Card' },
-      { id: 'cart',         icon: '🛒', label: 'Cart Widget' },
-      { id: 'checkout',     icon: '💳', label: 'Checkout Form' },
-      { id: 'reviews',      icon: '⭐', label: 'Reviews' },
+      { id: 'product-card', label: 'Product Card' },
+      { id: 'cart',         label: 'Cart' },
+      { id: 'checkout',     label: 'Checkout' },
+      { id: 'reviews',      label: 'Reviews' },
     ],
   },
   {
-    label: 'Memecoin 🐕',
+    label: 'Memecoin',
     blocks: [
-      { id: 'tokenomics',   icon: '📊', label: 'Tokenomics' },
-      { id: 'roadmap',      icon: '🗺️', label: 'Roadmap' },
-      { id: 'community',    icon: '🐶', label: 'Community' },
-      { id: 'buy-now',      icon: '🚀', label: 'Buy Now CTA' },
-      { id: 'whitepaper',   icon: '📄', label: 'Whitepaper' },
-      { id: 'socials',      icon: '🌐', label: 'Socials / Links' },
+      { id: 'tokenomics',   label: 'Tokenomics' },
+      { id: 'roadmap',      label: 'Roadmap' },
+      { id: 'community',    label: 'Community' },
+      { id: 'buy-now',      label: 'Buy CTA' },
+      { id: 'whitepaper',   label: 'Whitepaper' },
+      { id: 'socials',      label: 'Socials' },
     ],
   },
 ]
 
 const TECH_STACKS = [
-  { id: 'react',      icon: '⚛️', label: 'React' },
-  { id: 'nextjs',     icon: '▲',  label: 'Next.js' },
-  { id: 'vue',        icon: '🟩', label: 'Vue' },
-  { id: 'svelte',     icon: '🔥', label: 'Svelte' },
-  { id: 'html',       icon: '🌐', label: 'HTML/CSS' },
-  { id: 'tailwind',   icon: '🎨', label: 'Tailwind' },
-  { id: 'typescript', icon: '🔷', label: 'TypeScript' },
+  { id: 'react',      label: 'React' },
+  { id: 'nextjs',     label: 'Next.js' },
+  { id: 'vue',        label: 'Vue' },
+  { id: 'svelte',     label: 'Svelte' },
+  { id: 'html',       label: 'HTML/CSS' },
+  { id: 'tailwind',   label: 'Tailwind' },
+  { id: 'typescript', label: 'TypeScript' },
 ]
 
 // Funnel themes — what the USER'S WEBSITE will look like
@@ -174,9 +174,9 @@ const ACCENT_COLORS = [
 
 // App-level UI themes (affects the PromptForge / Akita app itself)
 const APP_THEMES = [
-  { id: 'dark',  label: '🌙 Dark' },
-  { id: 'light', label: '☀️ Light' },
-  { id: 'akita', label: '🐕 Akita' },
+  { id: 'dark',  label: 'Dark' },
+  { id: 'light', label: 'Light' },
+  { id: 'vapor', label: 'Vapor' },
 ]
 
 // ─── Draggable block in sidebar ──────────────────────────────────────────────
@@ -194,7 +194,6 @@ function DraggableBlock({ block }) {
       {...attributes}
       className={`block-item ${isDragging ? 'dragging' : ''}`}
     >
-      <span className="block-icon">{block.icon}</span>
       <span>{block.label}</span>
     </div>
   )
@@ -215,13 +214,13 @@ function DroppableSection({ id, children }) {
 
 function DroppedBlocks({ section, blocks, onRemove }) {
   if (blocks.length === 0) {
-    return <div className="drop-zone-hint">Drop component blocks here</div>
+    return <div className="drop-zone-hint">Drop blocks here</div>
   }
   return (
     <div className="dropped-blocks">
       {blocks.map(b => (
         <span key={b.id} className="dropped-block">
-          {b.icon} {b.label}
+          {b.label}
           <button className="dropped-block-remove" onClick={() => onRemove(section, b.id)}>×</button>
         </span>
       ))}
@@ -264,9 +263,8 @@ function ImageSection({ images, onAddUrl, onUpload, onRemove }) {
             .forEach(onUpload)
         }}
       >
-        <div className="image-upload-icon">📁</div>
-        <div className="image-upload-text">Drop images here or click to upload</div>
-        <div className="image-upload-hint">PNG, JPG, GIF, WebP supported</div>
+        <div className="image-upload-text">Drop files or click to upload</div>
+        <div className="image-upload-hint">PNG, JPG, GIF, WebP</div>
         <input
           ref={fileRef}
           type="file"
@@ -316,7 +314,7 @@ function OutputModal({ content, onClose }) {
     <div className="modal-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
       <div className="modal">
         <div className="modal-header">
-          <div className="modal-title">📄 Generated Prompt Spec — akita-prompt.md</div>
+          <div className="modal-title">akita-prompt.md</div>
           <button className="modal-close" onClick={onClose}>×</button>
         </div>
         <div className="modal-body">
@@ -324,10 +322,10 @@ function OutputModal({ content, onClose }) {
         </div>
         <div className="modal-footer">
           <button className="btn-copy" onClick={handleCopy}>
-            {copied ? '✓ Copied!' : '📋 Copy'}
+            {copied ? 'Copied' : 'Copy'}
           </button>
           <button className="btn-download-modal" onClick={handleDownload}>
-            ⬇ Download akita-prompt.md
+            Download
           </button>
         </div>
       </div>
@@ -605,7 +603,7 @@ ${imageSection}
       term?.log('ok', 'Spec saved as akita-prompt.md  ·  Press Ctrl+G in Claude Code to build UI')
 
       setOutput(resultText || md)
-      showToast('✓ Spec ready — click "View Output" to see it')
+      showToast('Done — check View Output')
     } catch (err) {
       term?.flushStream()
       term?.log('error', err.message)
@@ -629,10 +627,8 @@ ${imageSection}
         {/* ── Header ── */}
         <header className="header">
           <div className="header-brand">
-            <span className="header-logo">🐕</span>
             <div>
-              <div className="header-title">Akita</div>
-              <div className="header-subtitle">Prompt builder, no code needed</div>
+              <div className="header-title">akita</div>
             </div>
           </div>
 
@@ -671,8 +667,8 @@ ${imageSection}
           {/* ── Left Sidebar ── */}
           <aside className="sidebar">
             <div className="sidebar-header">
-              <div className="sidebar-title">Component Blocks</div>
-              <div className="sidebar-hint">Drag blocks into the funnel →</div>
+              <div className="sidebar-title">Components</div>
+              <div className="sidebar-hint">Drag into sections</div>
             </div>
             <div className="sidebar-body">
               {COMPONENT_GROUPS.map(group => (
@@ -689,14 +685,14 @@ ${imageSection}
           {/* ── Funnel ── */}
           <main className="content-area">
             <div className="funnel-wrapper">
-              <h1 className="funnel-title">Website Builder Funnel</h1>
+              <h1 className="funnel-title">Build your site</h1>
               <p className="funnel-desc">
-                Fill in each section. Drag component blocks from the left into any section to include them in your spec.
+                Pick a stack, choose a look, describe your business, and drop in components.
               </p>
 
               {savedToServer && (
                 <div className="agent-banner">
-                  <span className="agent-banner-icon">🤖</span>
+                  <span className="agent-banner-icon">→</span>
                   <span>
                     <strong>akita-prompt.md saved to server</strong> — your teammate can now run
                     the Claude agent (or press <kbd style={{
@@ -712,10 +708,8 @@ ${imageSection}
               {/* ── 1: Tech Stack ── */}
               <DroppableSection id="tech">
                 <div className="funnel-section-header">
-                  <span className="funnel-section-icon">⚙️</span>
                   <div className="funnel-section-info">
                     <div className="funnel-section-title">Tech Stack</div>
-                    <div className="funnel-section-subtitle">What technologies should be used?</div>
                   </div>
                   <div className="funnel-section-step">1</div>
                 </div>
@@ -727,9 +721,7 @@ ${imageSection}
                         className={`tech-pill ${selectedTech.includes(tech.id) ? 'selected' : ''}`}
                         onClick={() => toggleTech(tech.id)}
                       >
-                        <span>{tech.icon}</span>
-                        <span>{tech.label}</span>
-                        {selectedTech.includes(tech.id) && <span>✓</span>}
+                        {tech.label}
                       </button>
                     ))}
                   </div>
@@ -740,10 +732,8 @@ ${imageSection}
               {/* ── 2: Theme ── */}
               <DroppableSection id="theme">
                 <div className="funnel-section-header">
-                  <span className="funnel-section-icon">🎨</span>
                   <div className="funnel-section-info">
                     <div className="funnel-section-title">Theme & Colors</div>
-                    <div className="funnel-section-subtitle">Choose the visual style for your website</div>
                   </div>
                   <div className="funnel-section-step">2</div>
                 </div>
@@ -801,17 +791,15 @@ ${imageSection}
               {/* ── 3: Product Details ── */}
               <DroppableSection id="product">
                 <div className="funnel-section-header">
-                  <span className="funnel-section-icon">📋</span>
                   <div className="funnel-section-info">
-                    <div className="funnel-section-title">Product / Business Details</div>
-                    <div className="funnel-section-subtitle">Describe your business, product, or service</div>
+                    <div className="funnel-section-title">About your business</div>
                   </div>
                   <div className="funnel-section-step">3</div>
                 </div>
                 <div className="funnel-section-body">
                   <textarea
                     className="product-textarea"
-                    placeholder="e.g. I run a small bakery called Sweet Crumbs. We sell artisan breads and pastries. I want a homepage with our story, a menu section, and a contact form. My audience is local families aged 30–60."
+                    placeholder="What does your business do? Who are your customers?"
                     value={productDetails}
                     onChange={e => setProductDetails(e.target.value)}
                   />
@@ -822,10 +810,8 @@ ${imageSection}
               {/* ── 4: Images ── */}
               <DroppableSection id="images">
                 <div className="funnel-section-header">
-                  <span className="funnel-section-icon">🖼️</span>
                   <div className="funnel-section-info">
                     <div className="funnel-section-title">Images</div>
-                    <div className="funnel-section-subtitle">Upload or link reference images for your site</div>
                   </div>
                   <div className="funnel-section-step">4</div>
                 </div>
@@ -851,13 +837,13 @@ ${imageSection}
         <div className="bottom-bar">
           <div className="bottom-status">
             {totalItems > 0
-              ? `${totalItems} item${totalItems !== 1 ? 's' : ''} in your spec`
-              : 'Fill in the sections above to build your prompt'}
+              ? `${totalItems} selected`
+              : 'Ready when you are'}
           </div>
           <div className="bottom-actions">
             {output && (
               <button className="btn-secondary" onClick={() => setShowModal(true)}>
-                📄 View Output
+                View Output
               </button>
             )}
             <button
@@ -867,7 +853,7 @@ ${imageSection}
             >
               {loading
                 ? <><div className="spinner" /> Generating…</>
-                : '🐕 Generate Prompt'}
+                : 'Generate'}
             </button>
           </div>
         </div>
@@ -878,7 +864,6 @@ ${imageSection}
       <DragOverlay>
         {activeBlock && (
           <div className="drag-overlay-item">
-            <span className="block-icon">{activeBlock.icon}</span>
             <span>{activeBlock.label}</span>
           </div>
         )}

@@ -56,7 +56,7 @@ const TerminalPanel = forwardRef(({ isOpen }, ref) => {
       cursorBlink: true,
       scrollback: 5000,
       convertEol: true,
-      fontFamily: '"Fira Code", "JetBrains Mono", "Courier New", monospace',
+      fontFamily: '"Source Code Pro", "Fira Code", "JetBrains Mono", monospace',
       fontSize: 12,
       lineHeight: 1.5,
       theme: {
