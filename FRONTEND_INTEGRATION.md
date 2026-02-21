@@ -115,6 +115,7 @@ Trigger website generation. The backend injects a prompt into Claude Code, which
 **Smart features:**
 - **Layout hash dedup**: If the layout hasn't changed since the last generation and a preview exists, returns `{ ok: true, cached: true }` instantly — no Claude call.
 - **Diff-aware regeneration**: If the layout changed (blocks added/removed/reordered, theme changed, etc.), the backend tells Claude exactly what changed so it can update the existing HTML instead of regenerating from scratch. This is faster and preserves design continuity.
+- **Stateful iteration**: Claude always reads the existing HTML before making changes. Revisions and layout updates modify the existing page — they never regenerate from scratch. This means edits are faster and you never lose a good design.
 
 **Response codes:**
 - `200` — generation started (or `{ cached: true }` if unchanged)
@@ -249,6 +250,7 @@ JSON messages for UI state updates. Has heartbeat (ping/pong every 30s).
 - `"revising"` — Claude is revising based on feedback
 
 **Progress messages** (sent during generation):
+- `"Reading current page..."` — Claude is calling get_current_html()
 - `"Reading layout..."` — Claude is calling get_layout()
 - `"Generating HTML..."` — Claude is writing code
 - `"Rendering preview..."` — Claude is calling show_preview()

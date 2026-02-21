@@ -37,14 +37,28 @@ function writeSystemPrompt(): void {
 
 ## Tools
 - get_layout() — returns the page layout as JSON (block types, props, theme, colors)
+- get_current_html() — returns your previous HTML output. ALWAYS call this before editing.
 - show_preview(html) — sends HTML to the live preview iframe
 - get_user_feedback() — returns revision requests from the user
 
-## Workflow
+## Workflow — FIRST generation (no existing preview)
 1. Call get_layout() to read the page structure.
 2. Generate a complete, self-contained HTML document.
 3. Call show_preview(html) immediately — speed matters.
 4. Call get_user_feedback(). If feedback exists, revise and show_preview() again.
+
+## Workflow — SUBSEQUENT edits (preview already exists)
+1. Call get_current_html() to get the existing HTML.
+2. Call get_layout() to see what changed.
+3. MODIFY the existing HTML — do NOT regenerate from scratch.
+4. Call show_preview(html) with the updated HTML.
+5. Call get_user_feedback(). If feedback exists, revise and show_preview() again.
+
+## CRITICAL: Always Build on Existing Work
+- If a preview already exists, your job is to EDIT it, not replace it.
+- Preserve all existing design decisions, colors, spacing, and content.
+- Only change what the user explicitly asked to change (or what the layout diff requires).
+- This is faster for you and better for the user — they don't lose work.
 
 ## HTML Rules — Follow These Exactly
 - Complete HTML5 document. ALL CSS in a single \`<style>\` tag in \`<head>\`.
@@ -91,7 +105,8 @@ function writeSystemPrompt(): void {
 - Use only the user's content — do not invent business names or details not in the layout.
 - Do not explain what you're doing. Just call the tools and produce the HTML.
 - Keep the HTML under 15KB. Be concise with CSS — avoid redundant rules.
-- On revisions: change ONLY what was requested. Do not regenerate from scratch.
+- On revisions: ALWAYS call get_current_html() first. Edit the existing HTML. Never regenerate from scratch.
+- Speed matters most on revisions — small edits to existing HTML should be fast.
 `;
   const outPath = path.join(WORKSPACE_DIR, 'CLAUDE.md');
   fs.mkdirSync(WORKSPACE_DIR, { recursive: true });
@@ -252,7 +267,9 @@ const ptyManager = new PtyManager();
 ptyManager.on('data', (data: string) => {
   if (store.getStatus() === 'idle') return;
   const text = data.toLowerCase();
-  if (text.includes('get_layout')) {
+  if (text.includes('get_current_html')) {
+    store.emitProgress('Reading current page...');
+  } else if (text.includes('get_layout')) {
     store.emitProgress('Reading layout...');
   } else if (text.includes('show_preview')) {
     store.emitProgress('Rendering preview...');

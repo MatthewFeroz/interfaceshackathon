@@ -35,7 +35,12 @@ function describeBlock(block: Block, index: number): string {
 export function buildRevisionPrompt(feedback: string): string {
   return `Revision request: "${feedback}"
 
-Call get_layout() for any layout changes, revise the HTML, then call show_preview(html). Be concise — just make the change and show the result.`;
+Steps:
+1. Call get_current_html() to get the existing page.
+2. Edit ONLY what the user asked for — preserve everything else.
+3. Call show_preview(html) with the modified HTML.
+
+Do NOT regenerate from scratch. Modify the existing HTML.`;
 }
 
 export function diffLayouts(prev: PageLayout, next: PageLayout): string[] {
@@ -112,7 +117,13 @@ Updated layout:
 ${blockList}
 ${extras.length ? extras.map(e => `- ${e}`).join('\n') : ''}
 
-Call get_layout() to see the full details, then revise the existing HTML to match these changes. Call show_preview(html) when done. Preserve as much of the existing design as possible — only change what's needed.`;
+Steps:
+1. Call get_current_html() to get the existing page.
+2. Call get_layout() for the full details.
+3. Modify the existing HTML to match the changes above — do NOT rebuild from scratch.
+4. Call show_preview(html) with the updated HTML.
+
+Preserve the existing design. Only change what's needed.`;
 }
 
 export function buildGeneratePrompt(layout: PageLayout): string {

@@ -67,6 +67,32 @@ server.tool(
   },
 );
 
+// Tool: get_current_html
+server.tool(
+  'get_current_html',
+  'Returns the current preview HTML. Use this to read your previous output before making edits.',
+  {},
+  async () => {
+    try {
+      const data = await fetchJson('/api/state/preview') as { html: string };
+      const html = data.html || '';
+      return {
+        content: [{
+          type: 'text',
+          text: html
+            ? html
+            : 'No preview exists yet. Generate from scratch.',
+        }],
+      };
+    } catch (err) {
+      return {
+        content: [{ type: 'text', text: `Error fetching preview: ${err}` }],
+        isError: true,
+      };
+    }
+  },
+);
+
 // Tool: get_user_feedback
 server.tool(
   'get_user_feedback',
