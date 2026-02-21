@@ -130,6 +130,18 @@ ptyManager.on('exit', (exitCode: number, signal: number) => {
   }, 2000);
 });
 
+// Export generated HTML as downloadable file
+app.get('/api/export', (_req, res) => {
+  const html = store.getPreviewHtml();
+  if (!html) {
+    res.status(404).json({ error: 'No preview to export — generate first' });
+    return;
+  }
+  res.setHeader('Content-Type', 'text/html; charset=utf-8');
+  res.setHeader('Content-Disposition', 'attachment; filename="website.html"');
+  res.send(html);
+});
+
 // Save prompt endpoint (for frontend compatibility)
 app.post('/api/save-prompt', (req, res) => {
   const { markdown } = req.body;
