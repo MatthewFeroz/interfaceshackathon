@@ -49,6 +49,45 @@ Empty props are fine — Claude will use sensible defaults and produce polished 
 
 ### HTTP Endpoints
 
+#### GET `/api/blocks`
+Returns all supported block types with descriptions. Use this to populate the block palette dynamically instead of hardcoding.
+
+```js
+const { blocks } = await (await fetch('/api/blocks')).json();
+// blocks: [{ type: "hero", description: "full-width hero with headline..." }, ...]
+```
+
+#### GET `/api/themes`
+Returns all supported themes with descriptions. Use this to populate the theme picker.
+
+```js
+const { themes } = await (await fetch('/api/themes')).json();
+// themes: [{ name: "Modern", key: "modern", description: "Clean, minimal..." }, ...]
+// Use `name` for display, `key` or `name` as the `theme` field in layouts
+```
+
+#### GET `/api/templates`
+Returns starter layout templates. Each template includes a name, description, theme, accent color, and block list.
+
+```js
+const { templates } = await (await fetch('/api/templates')).json();
+// templates: [{ id: "saas-landing", name: "SaaS Landing Page", blockCount: 8, blockTypes: [...] }, ...]
+```
+
+#### GET `/api/templates/:id`
+Returns a full layout for a specific template — ready to POST directly to `/api/state/layout`.
+
+```js
+// Load a template and apply it
+const layout = await (await fetch('/api/templates/restaurant')).json();
+await fetch('/api/state/layout', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify(layout),
+});
+// Then call POST /api/generate to build it
+```
+
 #### POST `/api/state/layout`
 Update the current layout. Call this whenever the user changes anything in the builder.
 Returns 400 with error details if the layout is invalid.
@@ -73,14 +112,22 @@ const res = await fetch('http://localhost:3001/api/state/layout', {
 #### POST `/api/generate`
 Trigger website generation. The backend injects a prompt into Claude Code, which calls MCP tools to read the layout and push the preview.
 
+**Smart features:**
+- **Layout hash dedup**: If the layout hasn't changed since the last generation and a preview exists, returns `{ ok: true, cached: true }` instantly — no Claude call.
+- **Diff-aware regeneration**: If the layout changed (blocks added/removed/reordered, theme changed, etc.), the backend tells Claude exactly what changed so it can update the existing HTML instead of regenerating from scratch. This is faster and preserves design continuity.
+
 **Response codes:**
-- `200` — generation started
+- `200` — generation started (or `{ cached: true }` if unchanged)
 - `400` — no blocks in layout
 - `409` — generation already in progress (duplicate click)
 - `503` — Claude Code is still starting up
 
 ```js
 const res = await fetch('http://localhost:3001/api/generate', { method: 'POST' });
+const data = await res.json();
+if (data.cached) {
+  // Layout unchanged — preview is already current, no need to wait
+}
 if (res.status === 409) {
   // Already generating — show spinner or disable button
 }
@@ -192,9 +239,10 @@ JSON messages for UI state updates. Has heartbeat (ping/pong every 30s).
 | Type | Payload | When |
 |------|---------|------|
 | `init` | `{ layout, previewHtml, status }` | On connect |
-| `preview:updated` | `{ html, version }` | Claude generates new HTML |
+| `preview:progress` | `{ html }` | Work-in-progress HTML (partial page building up) |
+| `preview:updated` | `{ html, version }` | Final HTML — generation complete |
 | `status` | `{ status }` | Status changes: `"idle"`, `"generating"`, `"revising"` |
-| `progress` | `{ message }` | Progress updates during generation |
+| `progress` | `{ message }` | Progress text updates during generation |
 
 **Status values:**
 - `"idle"` — ready for commands
@@ -209,6 +257,8 @@ JSON messages for UI state updates. Has heartbeat (ping/pong every 30s).
 - `"Retrying generation..."` — Auto-retry after timeout
 - `"Error detected — ready to retry"` — MCP error detected
 
+**Streaming preview**: During generation, Claude sends `preview:progress` messages with partial HTML as it builds the page section by section. Render these in the iframe for a "building up" effect. The final `preview:updated` replaces the progress HTML with the complete version. If you don't want the streaming effect, just ignore `preview:progress` and wait for `preview:updated`.
+
 **Full WebSocket handler:**
 ```js
 const uiWs = new WebSocket('ws://localhost:3001/ws/ui');
@@ -218,14 +268,20 @@ uiWs.onmessage = (e) => {
 
   switch (msg.type) {
     case 'init':
-      // Set initial state
+      // Set initial state (restored from disk on server restart)
       if (msg.payload.previewHtml) {
         iframe.srcdoc = msg.payload.previewHtml;
       }
       updateStatus(msg.payload.status);
       break;
 
+    case 'preview:progress':
+      // Work-in-progress HTML — show partial results building up
+      iframe.srcdoc = msg.payload.html;
+      break;
+
     case 'preview:updated':
+      // Final complete HTML — generation done
       iframe.srcdoc = msg.payload.html;
       // msg.payload.version is the version number
       break;
@@ -246,23 +302,26 @@ uiWs.onmessage = (e) => {
 
 ## Typical User Flow
 
-1. **App loads** → PTY is already running. Connect `/ws/terminal` for terminal panel. `/ws/ui` sends `init` with current state.
-2. **User drags blocks** → `POST /api/state/layout` on every change
-3. **User clicks Generate** → `POST /api/generate`
+1. **App loads** → PTY is already running + MCP tools are pre-warmed. Connect `/ws/terminal` for terminal panel. `/ws/ui` sends `init` with current state (restored from previous session if server restarted).
+2. **User picks a template** (optional) → `GET /api/templates/saas-landing` → `POST /api/state/layout` with the result
+3. **User drags blocks** → `POST /api/state/layout` on every change
+4. **User clicks Generate** → `POST /api/generate`
+   - If `{ cached: true }`: layout unchanged, preview already current — no wait needed
    - If 409: already generating (disable button based on status WS messages)
    - If 503: PTY not ready (show loading, retry)
-4. **Claude works** → `status` WS message: `"generating"`. `progress` messages show what's happening. Terminal shows Claude working.
-5. **Claude finishes** → `preview:updated` on `/ws/ui` → render in iframe. `status` → `"idle"`.
-6. **User types feedback** → `POST /api/revise`
-7. **Claude revises** → `status` → `"revising"`, then `preview:updated` → iframe updates
-8. **User clicks Export** → `GET /api/export` downloads `website.html`
-9. **User clicks Undo** → `POST /api/state/preview/revert/:version` restores previous version
+5. **Claude works** → `status` WS: `"generating"`. `progress` messages show what's happening. `preview:progress` shows partial HTML building up. Terminal shows Claude working.
+6. **Claude finishes** → `preview:updated` on `/ws/ui` → render in iframe. `status` → `"idle"`.
+7. **User types feedback** → `POST /api/revise`
+8. **Claude revises** → `status` → `"revising"`, then `preview:updated` → iframe updates
+9. **User clicks Export** → `GET /api/export` downloads `website.html`
+10. **User clicks Undo** → `POST /api/state/preview/revert/:version` restores previous version
 
 ## Error Handling
 
 - **Generation timeout**: If Claude takes >90s, the backend auto-retries once, then resets to idle. The frontend will see `status: "idle"` and a progress message `"Generation failed — try again"`.
-- **PTY crash**: The backend auto-restarts the PTY after 2s. The frontend can poll `/api/health` to check `pty.ready`.
+- **PTY crash**: The backend auto-restarts the PTY after 2s and re-warms MCP tools. The frontend can poll `/api/health` to check `pty.ready`.
 - **Duplicate requests**: The 409 response prevents stacking. Use the `status` WS messages to disable the Generate button during generation.
+- **State persistence**: Layout and preview versions are saved to disk. If the backend restarts, state is automatically restored. The `init` WS message includes the restored state.
 
 ## Mapping the Current Frontend to the Backend
 
@@ -275,6 +334,11 @@ uiWs.onmessage = (e) => {
 | `productDetails` | `businessDescription` |
 
 The `COMPONENT_GROUPS` block IDs in the frontend (like `'navbar'`, `'hero'`, `'pricing'`) map directly to block `type` values.
+
+**Instead of hardcoding these**, use the dynamic endpoints:
+- `GET /api/blocks` → populate the block palette
+- `GET /api/themes` → populate the theme picker
+- `GET /api/templates` → populate a "Start from template" selector
 
 ## Running
 

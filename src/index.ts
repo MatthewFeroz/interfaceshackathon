@@ -1,6 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import http from 'node:http';
+import crypto from 'node:crypto';
 import express from 'express';
 import { PORT, PROJECT_ROOT, WORKSPACE_DIR, MCP_SERVER_DIR, MCP_CONFIG_PATH } from './config.js';
 import { store } from './state/store.js';
@@ -8,7 +9,7 @@ import { stateRouter } from './state/routes.js';
 import { PtyManager } from './pty/manager.js';
 import { setupTerminalWs } from './pty/ws-bridge.js';
 import { setupUiWs } from './ws/ui.js';
-import { buildGeneratePrompt, buildRevisionPrompt } from './prompt/builder.js';
+import { buildGeneratePrompt, buildRevisionPrompt, buildRegeneratePrompt, diffLayouts, BLOCK_HINTS, THEME_STYLES } from './prompt/builder.js';
 
 // ── MCP config generation ──────────────────────────────────────────────────
 
@@ -36,14 +37,16 @@ function writeSystemPrompt(): void {
 
 ## Tools
 - get_layout() — returns the page layout as JSON (block types, props, theme, colors)
-- show_preview(html) — sends HTML to the live preview iframe
+- show_progress(html) — sends work-in-progress HTML to the preview (no version saved). Use to show partial results.
+- show_preview(html) — sends final HTML to the live preview iframe (saves a version)
 - get_user_feedback() — returns revision requests from the user
 
 ## Workflow
 1. Call get_layout() to read the page structure.
-2. Generate a complete, self-contained HTML document.
-3. Call show_preview(html) immediately — speed matters.
-4. Call get_user_feedback(). If feedback exists, revise and show_preview() again.
+2. Generate the HTML document section by section.
+3. After completing 2-3 sections, call show_progress(html) with whatever you have so far (even if incomplete). The user sees the page build up live. This is important for perceived speed.
+4. When ALL sections are done, call show_preview(html) with the final complete HTML.
+5. Call get_user_feedback(). If feedback exists, revise and show_preview() again.
 
 ## HTML Rules — Follow These Exactly
 - Complete HTML5 document. ALL CSS in a single \`<style>\` tag in \`<head>\`.
@@ -130,6 +133,115 @@ app.get('/api/health', (_req, res) => {
 // Serve test.html at root for dev testing
 app.get('/test', (_req, res) => {
   res.sendFile(path.join(PROJECT_ROOT, 'test.html'));
+});
+
+// Block schema — single source of truth for supported block types
+app.get('/api/blocks', (_req, res) => {
+  const blocks = Object.entries(BLOCK_HINTS).map(([type, description]) => ({
+    type,
+    description,
+  }));
+  res.json({ blocks });
+});
+
+// Theme list — single source of truth for supported themes
+app.get('/api/themes', (_req, res) => {
+  const themes = Object.entries(THEME_STYLES).map(([name, description]) => ({
+    name: name.split(' ').map(w => w[0].toUpperCase() + w.slice(1)).join(' '), // Title case
+    key: name,
+    description,
+  }));
+  res.json({ themes });
+});
+
+// Layout templates — starter layouts for quick setup
+const TEMPLATES = [
+  {
+    id: 'saas-landing',
+    name: 'SaaS Landing Page',
+    description: 'Hero, features, pricing, testimonials, CTA, and footer',
+    theme: 'Modern',
+    accentColor: '#6366F1',
+    blocks: [
+      { id: 'navbar-1', type: 'navbar', props: {} },
+      { id: 'hero-1', type: 'hero', props: { heading: 'Your Product Name', subheading: 'One line that explains your value proposition' } },
+      { id: 'logo_cloud-1', type: 'logo_cloud', props: {} },
+      { id: 'features-1', type: 'features', props: {} },
+      { id: 'pricing-1', type: 'pricing', props: {} },
+      { id: 'testimonials-1', type: 'testimonials', props: {} },
+      { id: 'cta-1', type: 'cta', props: {} },
+      { id: 'footer-1', type: 'footer', props: {} },
+    ],
+  },
+  {
+    id: 'restaurant',
+    name: 'Restaurant',
+    description: 'Warm and inviting with menu, gallery, and contact info',
+    theme: 'Warm & Friendly',
+    accentColor: '#D97706',
+    blocks: [
+      { id: 'navbar-1', type: 'navbar', props: {} },
+      { id: 'hero-1', type: 'hero', props: { heading: 'Restaurant Name', subheading: 'Farm-to-table dining experience' } },
+      { id: 'features-1', type: 'features', props: { title: 'Our Specialties' } },
+      { id: 'gallery-1', type: 'gallery', props: {} },
+      { id: 'testimonials-1', type: 'testimonials', props: {} },
+      { id: 'contact-1', type: 'contact', props: {} },
+      { id: 'footer-1', type: 'footer', props: {} },
+    ],
+  },
+  {
+    id: 'portfolio',
+    name: 'Creative Portfolio',
+    description: 'Bold showcase for freelancers and agencies',
+    theme: 'Bold',
+    accentColor: '#EC4899',
+    blocks: [
+      { id: 'navbar-1', type: 'navbar', props: {} },
+      { id: 'hero-1', type: 'hero', props: { heading: 'Your Name', subheading: 'Designer / Developer / Creator' } },
+      { id: 'gallery-1', type: 'gallery', props: { title: 'Selected Work' } },
+      { id: 'stats-1', type: 'stats', props: {} },
+      { id: 'testimonials-1', type: 'testimonials', props: {} },
+      { id: 'contact-1', type: 'contact', props: {} },
+      { id: 'footer-1', type: 'footer', props: {} },
+    ],
+  },
+  {
+    id: 'startup',
+    name: 'Tech Startup',
+    description: 'Dark, modern, and high-energy with stats and social proof',
+    theme: 'Tech Startup',
+    accentColor: '#8B5CF6',
+    blocks: [
+      { id: 'navbar-1', type: 'navbar', props: {} },
+      { id: 'hero-1', type: 'hero', props: { heading: 'Product Name', subheading: 'The next generation platform for developers' } },
+      { id: 'features-1', type: 'features', props: {} },
+      { id: 'stats-1', type: 'stats', props: {} },
+      { id: 'pricing-1', type: 'pricing', props: {} },
+      { id: 'faq-1', type: 'faq', props: {} },
+      { id: 'cta-1', type: 'cta', props: {} },
+      { id: 'footer-1', type: 'footer', props: {} },
+    ],
+  },
+];
+
+app.get('/api/templates', (_req, res) => {
+  // Return without full block details for the list view
+  const list = TEMPLATES.map(({ id, name, description, theme, accentColor, blocks }) => ({
+    id, name, description, theme, accentColor, blockCount: blocks.length,
+    blockTypes: blocks.map(b => b.type),
+  }));
+  res.json({ templates: list });
+});
+
+app.get('/api/templates/:id', (req, res) => {
+  const template = TEMPLATES.find(t => t.id === req.params.id);
+  if (!template) {
+    res.status(404).json({ error: 'Template not found' });
+    return;
+  }
+  // Return the full layout ready to POST to /api/state/layout
+  const { id: _id, name: _name, description: _desc, ...layout } = template;
+  res.json(layout);
 });
 
 // State routes
@@ -251,6 +363,14 @@ app.post('/api/pty/restart', (_req, res) => {
   }
 });
 
+// Layout hash for deduplication — skip generation if layout unchanged
+let lastGeneratedHash = '';
+let lastGeneratedLayout: import('./state/store.js').PageLayout | null = null;
+
+function hashLayout(layout: import('./state/store.js').PageLayout): string {
+  return crypto.createHash('md5').update(JSON.stringify(layout)).digest('hex');
+}
+
 // Generate: inject prompt into PTY
 app.post('/api/generate', (_req, res) => {
   try {
@@ -262,6 +382,13 @@ app.post('/api/generate', (_req, res) => {
     const layout = store.getLayout();
     if (!layout.blocks.length) {
       res.status(400).json({ error: 'No blocks in layout' });
+      return;
+    }
+
+    // Check if layout is identical to what we last generated
+    const layoutHash = hashLayout(layout);
+    if (layoutHash === lastGeneratedHash && store.getPreviewHtml()) {
+      res.json({ ok: true, cached: true });
       return;
     }
 
@@ -278,7 +405,23 @@ app.post('/api/generate', (_req, res) => {
     store.clearFeedback();
     store.setStatus('generating');
 
-    const prompt = buildGeneratePrompt(layout);
+    // Use diff-aware regeneration if we have a previous layout and existing preview
+    let prompt: string;
+    if (lastGeneratedLayout && store.getPreviewHtml()) {
+      const changes = diffLayouts(lastGeneratedLayout, layout);
+      if (changes.length > 0) {
+        prompt = buildRegeneratePrompt(layout, changes);
+        console.log('[generate] Layout changed: %s', changes.join(', '));
+      } else {
+        prompt = buildGeneratePrompt(layout);
+      }
+    } else {
+      prompt = buildGeneratePrompt(layout);
+    }
+
+    lastGeneratedHash = layoutHash;
+    lastGeneratedLayout = JSON.parse(JSON.stringify(layout)); // deep copy
+
     console.log('[generate] Injecting prompt (%d chars)', prompt.length);
     ptyManager.injectPrompt(prompt);
 
@@ -370,6 +513,7 @@ ptyManager.on('ready', () => {
 function startup(): void {
   writeMcpConfig();
   writeSystemPrompt();
+  store.restore();
 
   server.listen(PORT, () => {
     console.log(`[akita] Backend on http://localhost:${PORT}`);

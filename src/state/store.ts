@@ -1,4 +1,6 @@
 import { EventEmitter } from 'node:events';
+import fs from 'node:fs';
+import { STATE_FILE } from '../config.js';
 
 export interface BlockProps {
   [key: string]: unknown;
@@ -53,6 +55,7 @@ class Store extends EventEmitter {
   setLayout(layout: PageLayout): void {
     this.state.layout = layout;
     this.emit('layout:updated', layout);
+    this.schedulePersist();
   }
 
   getPreviewHtml(): string {
@@ -68,6 +71,7 @@ class Store extends EventEmitter {
     };
     this.state.previewVersions.push(version);
     this.emit('preview:updated', html, version.version);
+    this.schedulePersist();
     // Generation is done when preview is set
     this.setStatus('idle');
   }
@@ -102,6 +106,10 @@ class Store extends EventEmitter {
 
   private lastProgress = '';
 
+  emitPreviewProgress(html: string): void {
+    this.emit('preview:progress', html);
+  }
+
   emitProgress(message: string): void {
     if (message !== this.lastProgress) {
       this.lastProgress = message;
@@ -111,6 +119,47 @@ class Store extends EventEmitter {
 
   getStatus(): AgentStatus {
     return this.state.status;
+  }
+
+  // ── Persistence ─────────────────────────────────────────
+
+  private persistTimer: ReturnType<typeof setTimeout> | null = null;
+
+  private schedulePersist(): void {
+    // Debounce writes to avoid thrashing disk on rapid changes
+    if (this.persistTimer) return;
+    this.persistTimer = setTimeout(() => {
+      this.persistTimer = null;
+      this.persistNow();
+    }, 500);
+  }
+
+  private persistNow(): void {
+    try {
+      const data = {
+        layout: this.state.layout,
+        previewHtml: this.state.previewHtml,
+        previewVersions: this.state.previewVersions,
+      };
+      fs.writeFileSync(STATE_FILE, JSON.stringify(data));
+    } catch (err) {
+      console.error('[store] Failed to persist state:', err);
+    }
+  }
+
+  restore(): void {
+    try {
+      if (!fs.existsSync(STATE_FILE)) return;
+      const raw = fs.readFileSync(STATE_FILE, 'utf-8');
+      const data = JSON.parse(raw);
+      if (data.layout?.blocks) this.state.layout = data.layout;
+      if (data.previewHtml) this.state.previewHtml = data.previewHtml;
+      if (Array.isArray(data.previewVersions)) this.state.previewVersions = data.previewVersions;
+      console.log('[store] Restored state (%d versions, %d blocks)',
+        this.state.previewVersions.length, this.state.layout.blocks.length);
+    } catch (err) {
+      console.error('[store] Failed to restore state:', err);
+    }
   }
 
   setStatus(status: AgentStatus): void {
