@@ -49,6 +49,7 @@ function writeSystemPrompt(): void {
 5. Call get_user_feedback(). If feedback exists, revise and show_preview() again.
 
 ## HTML Rules — Follow These Exactly
+- Every top-level section wrapper MUST have a \`data-block-id\` attribute matching the block's id from the layout (e.g. \`<section data-block-id="hero-1">\`). This is required for section-level editing.
 - Complete HTML5 document. ALL CSS in a single \`<style>\` tag in \`<head>\`.
 - NO external CSS frameworks (no Tailwind, Bootstrap, etc.). Write all CSS from scratch.
 - Link ONE Google Font in \`<head>\` — choose based on theme (e.g., Inter for clean/modern, Playfair Display for elegant, Space Grotesk for tech).
@@ -448,7 +449,7 @@ app.post('/api/revise', (req, res) => {
       return;
     }
 
-    const { feedback } = req.body;
+    const { feedback, section } = req.body;
     if (!feedback) {
       res.status(400).json({ error: 'No feedback provided' });
       return;
@@ -463,7 +464,7 @@ app.post('/api/revise', (req, res) => {
     store.setFeedback(feedback);
     store.setStatus('revising');
 
-    const prompt = buildRevisionPrompt(feedback);
+    const prompt = buildRevisionPrompt(feedback, section);
     console.log('[revise] Injecting revision (%d chars)', prompt.length);
     ptyManager.injectPrompt(prompt);
 
