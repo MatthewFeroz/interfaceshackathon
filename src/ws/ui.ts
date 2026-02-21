@@ -18,6 +18,10 @@ export function setupUiWs(server: Server): WebSocketServer {
     broadcast({ type: 'preview:updated', payload: { html } });
   });
 
+  store.on('status:changed', (status: string) => {
+    broadcast({ type: 'status', payload: { status } });
+  });
+
   wss.on('connection', (ws: WebSocket) => {
     console.log('[ws/ui] Client connected');
 
@@ -27,6 +31,7 @@ export function setupUiWs(server: Server): WebSocketServer {
       payload: {
         layout: store.getLayout(),
         previewHtml: store.getPreviewHtml(),
+        status: store.getStatus(),
       },
     }));
 

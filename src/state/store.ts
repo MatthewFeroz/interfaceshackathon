@@ -18,10 +18,13 @@ export interface PageLayout {
   businessDescription?: string;
 }
 
+export type AgentStatus = 'idle' | 'generating' | 'revising';
+
 interface State {
   layout: PageLayout;
   previewHtml: string;
   feedback: string;
+  status: AgentStatus;
 }
 
 class Store extends EventEmitter {
@@ -29,6 +32,7 @@ class Store extends EventEmitter {
     layout: { blocks: [] },
     previewHtml: '',
     feedback: '',
+    status: 'idle',
   };
 
   getLayout(): PageLayout {
@@ -47,6 +51,8 @@ class Store extends EventEmitter {
   setPreviewHtml(html: string): void {
     this.state.previewHtml = html;
     this.emit('preview:updated', html);
+    // Generation is done when preview is set
+    this.setStatus('idle');
   }
 
   getFeedback(): string {
@@ -59,6 +65,17 @@ class Store extends EventEmitter {
 
   clearFeedback(): void {
     this.state.feedback = '';
+  }
+
+  getStatus(): AgentStatus {
+    return this.state.status;
+  }
+
+  setStatus(status: AgentStatus): void {
+    if (this.state.status !== status) {
+      this.state.status = status;
+      this.emit('status:changed', status);
+    }
   }
 }
 

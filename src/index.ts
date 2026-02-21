@@ -90,6 +90,7 @@ app.get('/api/health', (_req, res) => {
       running: ptyManager.isRunning(),
       ready: ptyManager.isReady(),
     },
+    status: store.getStatus(),
   });
 });
 
@@ -161,8 +162,9 @@ app.post('/api/generate', (_req, res) => {
       ptyManager.start();
     }
 
-    // Clear previous feedback
+    // Clear previous feedback and set status
     store.clearFeedback();
+    store.setStatus('generating');
 
     const prompt = buildGeneratePrompt(layout);
     console.log('[generate] Injecting prompt (%d chars)', prompt.length);
@@ -191,6 +193,7 @@ app.post('/api/revise', (req, res) => {
 
     // Store feedback so MCP tool can also read it
     store.setFeedback(feedback);
+    store.setStatus('revising');
 
     const prompt = buildRevisionPrompt(feedback);
     console.log('[revise] Injecting revision (%d chars)', prompt.length);
