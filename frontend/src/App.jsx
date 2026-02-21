@@ -662,6 +662,7 @@ export default function App() {
   const [feedback,       setFeedback]       = useState('')
   const [loading,        setLoading]        = useState(false)
   const [toast,          setToast]          = useState('')
+  const [previewExpanded, setPreviewExpanded] = useState(false)
 
   // Sound toggle
   const [soundOn, setSoundOn] = useState(true)
@@ -1118,9 +1119,18 @@ export default function App() {
           </main>
 
           {/* ── Right Panel: Preview + Terminal ── */}
-          <div className="right-panel">
+          <div className={`right-panel ${previewExpanded ? 'preview-expanded' : ''}`}>
             {/* Preview iframe */}
             <div className={`preview-panel ${previewHtml ? 'has-preview' : ''}`}>
+              {previewHtml && (
+                <button
+                  className="preview-toggle"
+                  onClick={() => setPreviewExpanded(prev => !prev)}
+                  title={previewExpanded ? 'Collapse preview' : 'Expand preview'}
+                >
+                  {previewExpanded ? '⤡' : '⤢'}
+                </button>
+              )}
               {previewHtml ? (
                 <iframe
                   className="preview-iframe"
