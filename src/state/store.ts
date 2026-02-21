@@ -34,6 +34,8 @@ interface State {
   status: AgentStatus;
 }
 
+const GENERATION_TIMEOUT_MS = 90_000;
+
 class Store extends EventEmitter {
   private state: State = {
     layout: { blocks: [] },
@@ -42,6 +44,7 @@ class Store extends EventEmitter {
     feedback: '',
     status: 'idle',
   };
+  private statusTimer: ReturnType<typeof setTimeout> | null = null;
 
   getLayout(): PageLayout {
     return this.state.layout;
@@ -105,6 +108,23 @@ class Store extends EventEmitter {
     if (this.state.status !== status) {
       this.state.status = status;
       this.emit('status:changed', status);
+
+      // Clear any existing timeout
+      if (this.statusTimer) {
+        clearTimeout(this.statusTimer);
+        this.statusTimer = null;
+      }
+
+      // Start timeout when entering a busy state
+      if (status !== 'idle') {
+        this.statusTimer = setTimeout(() => {
+          console.log(`[store] Generation timed out after ${GENERATION_TIMEOUT_MS / 1000}s, resetting to idle`);
+          this.state.status = 'idle';
+          this.emit('status:changed', 'idle');
+          this.emit('generation:timeout');
+          this.statusTimer = null;
+        }, GENERATION_TIMEOUT_MS);
+      }
     }
   }
 }
