@@ -1,5 +1,16 @@
 import type { PageLayout, Block } from '../state/store.js';
 
+const THEME_STYLES: Record<string, string> = {
+  'modern': 'Clean, minimal, lots of white space. Font: Inter or Space Grotesk. Light backgrounds, subtle gray accents, sharp lines.',
+  'warm & friendly': 'Approachable, rounded corners (16px), warm neutrals. Font: Nunito or Poppins. Soft shadows, friendly tone, warm background tints.',
+  'tech startup': 'Bold, dark mode option, gradient accents. Font: Space Grotesk or JetBrains Mono for headers. Dark backgrounds (#0a0a0a), neon accent highlights, geometric patterns.',
+  'elegant': 'Sophisticated, serif headings, generous spacing. Font: Playfair Display for headings, Lato for body. Muted colors, thin borders, refined feel.',
+  'vibrant': 'High energy, bold colors, playful. Font: Poppins or Montserrat. Bright accent, colorful section backgrounds, dynamic hover effects, emoji use encouraged.',
+  'bold': 'Strong typography, high contrast, impactful. Font: Oswald or Bebas Neue for headings. Large text, dramatic spacing, dark/light contrast, no-nonsense.',
+  'minimal': 'Ultra-clean, content-focused, barely any decoration. Font: Inter. White background, thin gray borders only, no shadows, no gradients. Let the content speak.',
+  'corporate': 'Professional, trustworthy, structured. Font: Source Sans Pro or Roboto. Blue/navy tones, grid layouts, formal but not boring. Trust badges and stats.',
+};
+
 const BLOCK_HINTS: Record<string, string> = {
   hero: 'full-width hero with headline, subheading, CTA button, and background treatment',
   features: 'feature grid/cards with icons or emoji, short titles, and descriptions',
@@ -35,7 +46,13 @@ export function buildGeneratePrompt(layout: PageLayout): string {
   const extras: string[] = [];
 
   if (layout.theme) {
-    extras.push(`Theme: ${layout.theme}`);
+    const themeKey = layout.theme.toLowerCase();
+    const style = THEME_STYLES[themeKey];
+    if (style) {
+      extras.push(`Theme: ${layout.theme} — ${style}`);
+    } else {
+      extras.push(`Theme: ${layout.theme}`);
+    }
   }
   if (layout.accentColor) {
     extras.push(`Accent color: ${layout.accentColor} — use for buttons, links, highlights, gradients`);
