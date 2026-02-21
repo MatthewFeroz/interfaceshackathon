@@ -22,6 +22,10 @@ export function setupUiWs(server: Server): WebSocketServer {
     broadcast({ type: 'status', payload: { status } });
   });
 
+  store.on('progress', (message: string) => {
+    broadcast({ type: 'progress', payload: { message } });
+  });
+
   // Heartbeat: ping every 30s, terminate if no pong within 10s
   const PING_INTERVAL = 30_000;
   const PONG_TIMEOUT = 10_000;

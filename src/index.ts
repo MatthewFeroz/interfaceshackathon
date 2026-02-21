@@ -105,6 +105,21 @@ app.use('/api/state', stateRouter);
 // PTY manager
 const ptyManager = new PtyManager();
 
+// Parse PTY output for progress signals
+ptyManager.on('data', (data: string) => {
+  if (store.getStatus() === 'idle') return;
+  const text = data.toLowerCase();
+  if (text.includes('get_layout')) {
+    store.emitProgress('Reading layout...');
+  } else if (text.includes('show_preview')) {
+    store.emitProgress('Rendering preview...');
+  } else if (text.includes('get_user_feedback')) {
+    store.emitProgress('Checking for feedback...');
+  } else if (text.includes('thinking') || text.includes('generating')) {
+    store.emitProgress('Generating HTML...');
+  }
+});
+
 // Auto-restart PTY on crash
 ptyManager.on('exit', (exitCode: number, signal: number) => {
   console.log(`[pty] Exited unexpectedly (code=${exitCode}, signal=${signal}), restarting in 2s...`);

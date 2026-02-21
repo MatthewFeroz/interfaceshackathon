@@ -100,6 +100,15 @@ class Store extends EventEmitter {
     this.state.feedback = '';
   }
 
+  private lastProgress = '';
+
+  emitProgress(message: string): void {
+    if (message !== this.lastProgress) {
+      this.lastProgress = message;
+      this.emit('progress', message);
+    }
+  }
+
   getStatus(): AgentStatus {
     return this.state.status;
   }
@@ -108,6 +117,7 @@ class Store extends EventEmitter {
     if (this.state.status !== status) {
       this.state.status = status;
       this.emit('status:changed', status);
+      if (status === 'idle') this.lastProgress = '';
 
       // Clear any existing timeout
       if (this.statusTimer) {
