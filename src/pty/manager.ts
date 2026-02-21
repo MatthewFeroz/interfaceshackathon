@@ -13,9 +13,14 @@ function findClaude(): string {
 
 export class PtyManager extends EventEmitter {
   private proc: pty.IPty | null = null;
+  private _ready = false;
 
   isRunning(): boolean {
     return this.proc !== null;
+  }
+
+  isReady(): boolean {
+    return this._ready;
   }
 
   start(): void {
@@ -27,8 +32,6 @@ export class PtyManager extends EventEmitter {
     const claudePath = findClaude();
     console.log('[pty] Spawning claude CLI...');
     console.log('[pty]   binary:', claudePath);
-    console.log('[pty]   cwd:', WORKSPACE_DIR);
-    console.log('[pty]   mcp-config:', MCP_CONFIG_PATH);
     console.log('[pty]   model:', CLAUDE_MODEL);
 
     // Strip CLAUDECODE env vars so nested Claude Code doesn't refuse to start
@@ -38,6 +41,8 @@ export class PtyManager extends EventEmitter {
         delete env[key];
       }
     }
+
+    this._ready = false;
 
     this.proc = pty.spawn(claudePath, [
       '--model', CLAUDE_MODEL,
@@ -52,23 +57,31 @@ export class PtyManager extends EventEmitter {
     });
 
     this.proc.onData((data: string) => {
-      // Log first chunk to debug startup issues
-      if (this.proc) {
-        const clean = data.replace(/\x1b\[[0-9;]*[a-zA-Z]/g, '').trim();
-        if (clean) {
-          console.log('[pty:data]', clean.substring(0, 200));
-        }
-      }
       this.emit('data', data);
+
+      // Detect when Claude Code is ready (shows the ">" prompt or idle)
+      if (!this._ready && data.includes('>')) {
+        this._ready = true;
+        this.emit('ready');
+        console.log('[pty] Claude Code is ready');
+      }
     });
 
     this.proc.onExit(({ exitCode, signal }) => {
       console.log(`[pty] Process exited (code=${exitCode}, signal=${signal})`);
       this.proc = null;
+      this._ready = false;
       this.emit('exit', exitCode, signal);
     });
 
     console.log('[pty] Claude CLI spawned, pid:', this.proc.pid);
+  }
+
+  restart(): void {
+    console.log('[pty] Restarting...');
+    this.kill();
+    // Small delay to let the process fully clean up
+    setTimeout(() => this.start(), 500);
   }
 
   injectPrompt(text: string): void {
@@ -102,6 +115,7 @@ export class PtyManager extends EventEmitter {
       console.log('[pty] Killing process');
       this.proc.kill();
       this.proc = null;
+      this._ready = false;
     }
   }
 }
