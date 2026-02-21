@@ -19,3 +19,6 @@ Important Teammate requirements:
 2. Those changes should update the Ctrl+G part of claude code with the new temp md claude file.
 3. He will be using Agents SDK with Claude
 4. Make the code base be capable of doing these changes
+
+XTerm changes:
+1. When the user click the generate prompt button, I need a xterm.js window to open the left that is read only but shows all the steps that claude is taking to build this out

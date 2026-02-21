@@ -941,6 +941,81 @@
   opacity: 0.95;
 }
 
+/* ── Terminal Panel ──────────────────────────────────────────────────────── */
+
+.terminal-panel {
+  width: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  background: #080c14;
+  border-left: 1px solid var(--border);
+  transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  flex-shrink: 0;
+}
+
+.terminal-panel.open {
+  width: 340px;
+}
+
+.terminal-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: #0d1120;
+  border-bottom: 1px solid #1a2035;
+  flex-shrink: 0;
+}
+
+.terminal-dots {
+  display: flex;
+  gap: 5px;
+}
+
+.tdot {
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+}
+
+.tdot-red    { background: #ff5f57; }
+.tdot-yellow { background: #febc2e; }
+.tdot-green  { background: #28c840; }
+
+.terminal-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: #64748b;
+  flex: 1;
+  font-family: 'Fira Code', monospace;
+}
+
+.terminal-label {
+  font-size: 10px;
+  color: #334155;
+  border: 1px solid #1e293b;
+  border-radius: 4px;
+  padding: 1px 6px;
+  font-family: monospace;
+}
+
+.terminal-body {
+  flex: 1;
+  overflow: hidden;
+  padding: 4px 0;
+}
+
+/* Fix xterm.js internal sizing */
+.terminal-body .xterm {
+  height: 100%;
+  padding: 6px 4px;
+}
+
+.terminal-body .xterm-viewport {
+  overflow-y: auto !important;
+}
+
 /* ── Akita paw decoration (akita theme only) ─────────────────────────────── */
 
 .app[data-theme="akita"] .funnel-section-step {
