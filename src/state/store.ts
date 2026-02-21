@@ -69,6 +69,14 @@ class Store extends EventEmitter {
     this.setStatus('idle');
   }
 
+  revertToVersion(version: number): PreviewVersion | undefined {
+    const v = this.state.previewVersions[version - 1];
+    if (!v) return undefined;
+    this.state.previewHtml = v.html;
+    this.emit('preview:updated', v.html, v.version);
+    return v;
+  }
+
   getPreviewVersions(): PreviewVersion[] {
     return this.state.previewVersions;
   }

@@ -41,6 +41,15 @@ stateRouter.get('/preview/versions/:version', (req, res) => {
   res.json(v);
 });
 
+stateRouter.post('/preview/revert/:version', (req, res) => {
+  const v = store.revertToVersion(parseInt(req.params.version, 10));
+  if (!v) {
+    res.status(404).json({ error: 'Version not found' });
+    return;
+  }
+  res.json({ ok: true, version: v.version });
+});
+
 // Feedback
 stateRouter.get('/feedback', (_req, res) => {
   res.json({ feedback: store.getFeedback() });
