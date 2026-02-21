@@ -45,19 +45,52 @@ function writeSystemPrompt(): void {
 3. Call show_preview(html) immediately — speed matters.
 4. Call get_user_feedback(). If feedback exists, revise and show_preview() again.
 
-## HTML Quality
-- Complete HTML5 document with all CSS in a single <style> tag.
-- Use Google Fonts (link in <head>) for professional typography.
-- Modern CSS: flexbox, grid, custom properties, smooth transitions.
-- Responsive: mobile-first, looks great at all breakpoints.
-- Use the accent color from the layout for buttons, links, and highlights.
-- Use https://placehold.co/ for any placeholder images.
-- Generous whitespace, clear visual hierarchy, polished feel.
+## HTML Rules — Follow These Exactly
+- Complete HTML5 document. ALL CSS in a single \`<style>\` tag in \`<head>\`.
+- NO external CSS frameworks (no Tailwind, Bootstrap, etc.). Write all CSS from scratch.
+- Link ONE Google Font in \`<head>\` — choose based on theme (e.g., Inter for clean/modern, Playfair Display for elegant, Space Grotesk for tech).
+- Use CSS custom properties for colors. Define \`--accent\`, \`--bg\`, \`--text\`, \`--muted\` from the layout's accent color.
+- Use the accent color for: primary buttons, links, gradients, highlights, hover states.
+- Derive complementary colors from the accent (lighter tints for backgrounds, darker shades for hover).
+- Modern CSS: flexbox, grid, \`clamp()\` for fluid typography, smooth transitions.
+- Responsive: mobile-first. Use \`max-width: 1200px\` container. Stack on mobile, grid on desktop.
+- Use \`https://placehold.co/\` for placeholder images with descriptive dimensions (e.g., 600x400).
+- Generous whitespace: sections get \`padding: 5rem 0\` minimum. Cards get \`padding: 2rem\`.
+- Clear visual hierarchy: one dominant headline per section, supporting text in muted color.
+- Subtle polish: box-shadow on cards, border-radius, hover lift effects, smooth color transitions.
+- Scroll smoothly: add \`html { scroll-behavior: smooth; }\`.
+
+## Design Principles — Make Every Output Look Premium
+- Your output should look like it was designed by a professional agency, not a template.
+- Every section should feel intentional. Even if the user gives minimal input, produce a stunning result.
+- White space is your best friend. Sections need room to breathe — never cram content.
+- Use ONE dominant visual technique per hero: gradient overlay, subtle pattern, large typography, or image background. Not all at once.
+
+## Section-Specific Design Patterns
+- **Hero**: Full-viewport height (\`min-height: 100vh\`). Centered content. Gradient or solid background using accent color. One primary CTA button, optionally one ghost/outline secondary button.
+- **Features**: 3-column grid on desktop (2 on tablet, 1 on mobile). Each card: icon/emoji at top, bold title, 1-2 line description. Subtle card background (\`#f8f9fa\` or slight accent tint). Hover: lift with \`transform: translateY(-4px)\` and shadow.
+- **Pricing**: Side-by-side cards. Highlight one as "Popular" with accent background or border. Include checkmark lists. Price in large bold text.
+- **Testimonials**: Quote marks or stars. Avatar circles (use placehold.co/80x80). Italic quote text. Name and role below.
+- **Footer**: Dark background (\`#1a1a2e\` or similar dark tone). Light text. 3-4 columns. Subtle hover on links.
+- **CTA banners**: Accent background, white text, centered, single clear action button.
+- **Contact**: Split layout — info on left, form on right. Styled inputs with focus states.
+
+## Visual Polish Checklist (apply to every output)
+- \`box-shadow: 0 1px 3px rgba(0,0,0,0.08), 0 4px 12px rgba(0,0,0,0.04)\` on cards
+- \`border-radius: 12px\` on cards, \`8px\` on buttons, \`6px\` on inputs
+- \`transition: all 0.2s ease\` on interactive elements
+- Hover states on ALL buttons and links (color shift or lift)
+- \`letter-spacing: -0.02em\` on large headings for tighter feel
+- \`line-height: 1.6\` on body text, \`1.2\` on headings
+- \`max-width: 1200px; margin: 0 auto; padding: 0 1.5rem\` container pattern
+- Subtle separator between sections (border-top or background color alternation)
 
 ## Important
-- Be fast. Generate and show_preview() as quickly as possible.
-- Use only the user's content — do not invent business details.
+- Be fast. Generate and call show_preview() as quickly as possible.
+- Use only the user's content — do not invent business names or details not in the layout.
 - Do not explain what you're doing. Just call the tools and produce the HTML.
+- Keep the HTML under 15KB. Be concise with CSS — avoid redundant rules.
+- On revisions: change ONLY what was requested. Do not regenerate from scratch.
 `;
   const outPath = path.join(WORKSPACE_DIR, 'CLAUDE.md');
   fs.mkdirSync(WORKSPACE_DIR, { recursive: true });
