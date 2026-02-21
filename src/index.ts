@@ -218,6 +218,13 @@ app.get('/api/templates/:id', (req, res) => {
   res.json(layout);
 });
 
+// Reset — clear all state and start fresh
+app.post('/api/reset', (_req, res) => {
+  store.reset();
+  lastGeneratedHash = '';
+  res.json({ ok: true });
+});
+
 // State routes
 app.use('/api/state', stateRouter);
 

@@ -144,6 +144,18 @@ class Store extends EventEmitter {
     }
   }
 
+  reset(): void {
+    this.state.layout = { blocks: [] };
+    this.state.previewHtml = '';
+    this.state.previewVersions = [];
+    this.state.feedback = '';
+    this.state.status = 'idle';
+    try { fs.unlinkSync(STATE_FILE); } catch {}
+    this.emit('preview:updated', '', 0);
+    this.emit('status:changed', 'idle');
+    console.log('[store] State reset');
+  }
+
   restore(): void {
     try {
       if (!fs.existsSync(STATE_FILE)) return;
