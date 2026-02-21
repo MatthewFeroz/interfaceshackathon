@@ -7,14 +7,12 @@ import '@xterm/xterm/css/xterm.css'
 export const c = {
   reset:   '\x1b[0m',
   bold:    '\x1b[1m',
-  dim:     '\x1b[2m',
   cyan:    '\x1b[36m',
   green:   '\x1b[32m',
   yellow:  '\x1b[33m',
   red:     '\x1b[31m',
   magenta: '\x1b[35m',
   gray:    '\x1b[90m',
-  white:   '\x1b[97m',
 }
 
 const BANNER = [
@@ -27,7 +25,7 @@ const TerminalPanel = forwardRef(({ isOpen }, ref) => {
   const containerRef   = useRef(null)
   const termRef        = useRef(null)
   const fitAddonRef    = useRef(null)
-  const partialLineRef = useRef('')   // tracks partial lines during streaming
+  const partialLineRef = useRef('')
 
   useEffect(() => {
     if (!containerRef.current) return
@@ -36,9 +34,11 @@ const TerminalPanel = forwardRef(({ isOpen }, ref) => {
       disableStdin: true,
       cursorBlink: false,
       scrollback: 5000,
+      convertEol: true,           // auto-convert \n → \r\n
       fontFamily: '"Fira Code", "JetBrains Mono", "Courier New", monospace',
       fontSize: 12,
-      lineHeight: 1.45,
+      lineHeight: 1.5,
+      letterSpacing: 0,
       theme: {
         background:          '#080c14',
         foreground:          '#94a3b8',
@@ -67,70 +67,62 @@ const TerminalPanel = forwardRef(({ isOpen }, ref) => {
     const fitAddon = new FitAddon()
     term.loadAddon(fitAddon)
     term.open(containerRef.current)
-    fitAddon.fit()
 
     termRef.current     = term
     fitAddonRef.current = fitAddon
 
-    BANNER.forEach(l => term.writeln(l))
-    term.writeln('')
-    term.writeln(`${c.gray}  Waiting for generate...${c.reset}`)
+    // ResizeObserver re-fits on every animation frame of the slide-in transition
+    // This is the correct fix — avoids stale column calculations at width≈0
+    const ro = new ResizeObserver(() => {
+      try { fitAddon.fit() } catch {}
+    })
+    ro.observe(containerRef.current)
 
-    const handleResize = () => fitAddonRef.current?.fit()
-    window.addEventListener('resize', handleResize)
+    // Initial fit + banner (deferred so DOM has dimensions)
+    requestAnimationFrame(() => {
+      try { fitAddon.fit() } catch {}
+      BANNER.forEach(l => term.writeln(l))
+      term.writeln('')
+      term.writeln(`${c.gray}  Waiting for generate...${c.reset}`)
+    })
+
     return () => {
-      window.removeEventListener('resize', handleResize)
+      ro.disconnect()
       term.dispose()
     }
   }, [])
 
-  // Refit when panel opens
-  useEffect(() => {
-    if (isOpen) setTimeout(() => fitAddonRef.current?.fit(), 60)
-  }, [isOpen])
-
   useImperativeHandle(ref, () => ({
-    // Print a full timestamped log line
     log: (level, msg) => {
-      const t   = termRef.current
+      const t = termRef.current
       if (!t) return
       const ts  = new Date().toLocaleTimeString('en', { hour12: false })
-      const col = level === 'info'    ? c.cyan
-                : level === 'ok'     ? c.green
-                : level === 'warn'   ? c.yellow
-                : level === 'error'  ? c.red
-                : level === 'stream' ? c.magenta
+      const col = level === 'info'   ? c.cyan
+                : level === 'ok'    ? c.green
+                : level === 'warn'  ? c.yellow
+                : level === 'error' ? c.red
                 : c.gray
-      const tag = level === 'info'    ? 'INFO  '
-                : level === 'ok'     ? 'DONE  '
-                : level === 'warn'   ? 'WARN  '
-                : level === 'error'  ? 'ERROR '
-                : level === 'stream' ? 'STREAM'
-                : 'LOG   '
+      const tag = level === 'info'   ? 'INFO '
+                : level === 'ok'    ? 'DONE '
+                : level === 'warn'  ? 'WARN '
+                : level === 'error' ? 'ERR  '
+                : 'LOG  '
       t.writeln(`  ${c.gray}${ts}${c.reset}  ${col}${c.bold}${tag}${c.reset}  ${msg}`)
     },
 
-    // Write raw streaming text chunk (no newline — appended inline)
+    // Write streaming markdown chunk — convertEol:true handles \n→\r\n
     writeChunk: (text) => {
-      const t = termRef.current
-      if (!t) return
-      // xterm handles \n as just LF; map to CRLF for proper rendering
-      const safe = text.replace(/\n/g, '\r\n')
-      t.write(safe)
+      termRef.current?.write(text)
       partialLineRef.current += text
     },
 
-    // Flush any partial streaming line with a newline
     flushStream: () => {
-      const t = termRef.current
-      if (!t) return
       if (partialLineRef.current !== '') {
-        t.write('\r\n')
+        termRef.current?.write('\r\n')
         partialLineRef.current = ''
       }
     },
 
-    // Full reset back to banner
     reset: () => {
       const t = termRef.current
       if (!t) return

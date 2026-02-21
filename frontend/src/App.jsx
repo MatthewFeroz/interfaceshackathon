@@ -499,7 +499,6 @@ ${imageSection}
       term?.log('warn', 'No Claude API key — outputting local markdown')
       term?.log('ok',   'Done. Click "View Output" to see the spec.')
       setOutput(md)
-      setShowModal(true)
       return
     }
 
@@ -566,13 +565,11 @@ ${imageSection}
       term?.log('ok', 'Spec saved as akita-prompt.md  ·  Press Ctrl+G in Claude Code to build UI')
 
       setOutput(resultText || md)
-      setShowModal(true)
-      showToast('✓ Spec generated — view output or press Ctrl+G')
+      showToast('✓ Spec ready — click "View Output" to see it')
     } catch (err) {
       term?.flushStream()
       term?.log('error', err.message)
       setOutput(md)
-      setShowModal(true)
       showToast(`Claude error: ${err.message}`)
     } finally {
       setLoading(false)
