@@ -19,7 +19,7 @@ The backend expects a `PageLayout` object. This is the **only schema constraint*
 ```typescript
 interface PageLayout {
   blocks: Block[];         // required, array of component blocks
-  theme?: string;          // e.g. "Dark", "Light", "Vibrant", "Akita"
+  theme?: string;          // e.g. "Dark", "Light", "Vibrant", "Warm & Friendly"
   accentColor?: string;    // hex color, e.g. "#F7931A"
   techStack?: string[];    // e.g. ["React", "Tailwind"]
   businessDescription?: string; // free text about the business
@@ -27,30 +27,34 @@ interface PageLayout {
 
 interface Block {
   id: string;              // unique, e.g. "hero-1", "navbar-2"
-  type: string;            // block type, e.g. "hero", "navbar", "features", "pricing", "footer", "cta", "testimonials"
-  props: Record<string, any>; // arbitrary properties — Claude reads these to understand what to build
+  type: string;            // block type (see supported types below)
+  props: Record<string, any>; // arbitrary properties — Claude reads these
 }
 ```
+
+**Supported block types:** `hero`, `features`, `pricing`, `testimonials`, `faq`, `contact`, `footer`, `navbar`, `gallery`, `team`, `cta`, `stats`, `logo_cloud`. Unknown types still work — Claude will interpret the name.
+
+**Validation:** The backend validates that `blocks` is an array and each block has `id` (string) and `type` (string). Invalid layouts get a 400 error with a specific message.
 
 **Block props are freeform.** Claude reads them and uses whatever is there. Examples:
 
 ```json
 { "id": "hero-1", "type": "hero", "props": { "heading": "Welcome", "subheading": "Best pet store" } }
 { "id": "features-1", "type": "features", "props": { "items": ["Grooming", "Boarding"] } }
-{ "id": "navbar-1", "type": "navbar", "props": { "brand": "Paws & Claws", "links": ["Home", "About"] } }
 { "id": "pricing-1", "type": "pricing", "props": {} }
 { "id": "footer-1", "type": "footer", "props": { "text": "© 2026 My Business" } }
 ```
 
-The `type` field is the most important — it tells Claude what kind of section to generate. Props give it details to work with, but empty props are fine (Claude will use sensible defaults).
+Empty props are fine — Claude will use sensible defaults and produce polished output regardless.
 
 ### HTTP Endpoints
 
 #### POST `/api/state/layout`
 Update the current layout. Call this whenever the user changes anything in the builder.
+Returns 400 with error details if the layout is invalid.
 
 ```js
-await fetch('http://localhost:3001/api/state/layout', {
+const res = await fetch('http://localhost:3001/api/state/layout', {
   method: 'POST',
   headers: { 'Content-Type': 'application/json' },
   body: JSON.stringify({
@@ -63,41 +67,32 @@ await fetch('http://localhost:3001/api/state/layout', {
     businessDescription: 'A pet store in Austin, TX.',
   })
 });
-```
-
-#### POST `/api/pty/start`
-Start the Claude Code terminal. **The backend now starts the PTY eagerly on boot**, so you typically don't need to call this. It's kept for manual restart scenarios.
-
-```js
-await fetch('http://localhost:3001/api/pty/start', { method: 'POST' });
-```
-
-#### POST `/api/pty/restart`
-Restart the Claude Code terminal. Use if the PTY crashes or you want a fresh session.
-
-```js
-await fetch('http://localhost:3001/api/pty/restart', { method: 'POST' });
-```
-
-#### GET `/api/health`
-Health check. Includes PTY status so the frontend can show if Claude is ready.
-
-```js
-const res = await fetch('http://localhost:3001/api/health');
-const { ok, pty } = await res.json();
-// pty.running: boolean — PTY process is alive
-// pty.ready: boolean — Claude Code has finished loading and is ready for prompts
+// On error: { "error": "Block 0: missing or invalid \"type\"" }
 ```
 
 #### POST `/api/generate`
-Trigger website generation. Posts latest layout to state first, then call this. The backend injects a prompt into Claude Code, which calls MCP tools to read the layout and push the preview.
+Trigger website generation. The backend injects a prompt into Claude Code, which calls MCP tools to read the layout and push the preview.
+
+**Response codes:**
+- `200` — generation started
+- `400` — no blocks in layout
+- `409` — generation already in progress (duplicate click)
+- `503` — Claude Code is still starting up
 
 ```js
-await fetch('http://localhost:3001/api/generate', { method: 'POST' });
+const res = await fetch('http://localhost:3001/api/generate', { method: 'POST' });
+if (res.status === 409) {
+  // Already generating — show spinner or disable button
+}
+if (res.status === 503) {
+  // PTY not ready — show "Loading..." and retry in a few seconds
+}
 ```
 
 #### POST `/api/revise`
-Send user feedback and trigger a revision. Claude will re-read the layout, revise the HTML, and push an updated preview.
+Send user feedback and trigger a revision. Claude will revise the HTML and push an updated preview.
+
+Same response codes as generate (200, 409, 503).
 
 ```js
 await fetch('http://localhost:3001/api/revise', {
@@ -107,21 +102,58 @@ await fetch('http://localhost:3001/api/revise', {
 });
 ```
 
-#### GET `/api/state/preview`
-Get the current preview HTML (for initial page load).
+#### GET `/api/health`
+Health check. Includes PTY status and generation status.
 
 ```js
-const res = await fetch('http://localhost:3001/api/state/preview');
-const { html } = await res.json(); // html is a complete HTML document string
+const { ok, pty, status } = await (await fetch('/api/health')).json();
+// pty.running: boolean — PTY process is alive
+// pty.ready: boolean — Claude Code has finished loading
+// status: "idle" | "generating" | "revising"
 ```
 
-#### GET `/api/health`
-Health check.
+#### GET `/api/export`
+Download the current preview as an HTML file. Returns 404 if no preview exists yet.
+
+```js
+// Trigger download in browser
+window.open('http://localhost:3001/api/export', '_blank');
+// Or fetch programmatically
+const res = await fetch('/api/export');
+const html = await res.text(); // Complete HTML document
+```
+
+#### GET `/api/state/preview`
+Get the current preview HTML (for initial page load or polling).
+
+```js
+const { html } = await (await fetch('/api/state/preview')).json();
+```
+
+#### Preview Versions
+
+```js
+// List all versions (metadata only, no HTML)
+const { versions, total } = await (await fetch('/api/state/preview/versions')).json();
+// versions: [{ version: 1, timestamp: "2026-02-21T..." }, ...]
+
+// Get a specific version (includes HTML)
+const { version, html, timestamp } = await (await fetch('/api/state/preview/versions/1')).json();
+
+// Revert to a previous version (updates preview + broadcasts to all clients)
+await fetch('/api/state/preview/revert/1', { method: 'POST' });
+```
+
+#### POST `/api/pty/start`
+Start the Claude Code terminal. **The backend starts the PTY eagerly on boot**, so you typically don't need this. Kept for manual restart scenarios.
+
+#### POST `/api/pty/restart`
+Restart the Claude Code terminal. Use if the PTY seems stuck.
 
 ### WebSockets
 
 #### `ws://localhost:3001/ws/terminal`
-Raw PTY I/O for the Claude Code terminal panel.
+Raw PTY I/O for the Claude Code terminal panel. Has heartbeat (ping/pong every 30s).
 
 **Server → Browser**: Raw terminal output (escape sequences). Feed directly into xterm.js `terminal.write(data)`.
 
@@ -153,47 +185,86 @@ term.onResize(({ cols, rows }) => {
 ```
 
 #### `ws://localhost:3001/ws/ui`
-JSON messages for UI state updates.
+JSON messages for UI state updates. Has heartbeat (ping/pong every 30s).
 
 **Messages from server:**
 
-`init` — sent on connect with current state:
-```json
-{ "type": "init", "payload": { "layout": { ... }, "previewHtml": "<html>..." } }
-```
+| Type | Payload | When |
+|------|---------|------|
+| `init` | `{ layout, previewHtml, status }` | On connect |
+| `preview:updated` | `{ html, version }` | Claude generates new HTML |
+| `status` | `{ status }` | Status changes: `"idle"`, `"generating"`, `"revising"` |
+| `progress` | `{ message }` | Progress updates during generation |
 
-`preview:updated` — sent whenever Claude generates new HTML:
-```json
-{ "type": "preview:updated", "payload": { "html": "<html>..." } }
-```
+**Status values:**
+- `"idle"` — ready for commands
+- `"generating"` — Claude is building a website
+- `"revising"` — Claude is revising based on feedback
 
-**Rendering the preview:**
+**Progress messages** (sent during generation):
+- `"Reading layout..."` — Claude is calling get_layout()
+- `"Generating HTML..."` — Claude is writing code
+- `"Rendering preview..."` — Claude is calling show_preview()
+- `"Checking for feedback..."` — Claude is calling get_user_feedback()
+- `"Retrying generation..."` — Auto-retry after timeout
+- `"Error detected — ready to retry"` — MCP error detected
+
+**Full WebSocket handler:**
 ```js
 const uiWs = new WebSocket('ws://localhost:3001/ws/ui');
+
 uiWs.onmessage = (e) => {
   const msg = JSON.parse(e.data);
-  if (msg.type === 'preview:updated' || msg.type === 'init') {
-    const html = msg.payload.html || msg.payload.previewHtml;
-    if (html) {
-      document.getElementById('preview-iframe').srcdoc = html;
-    }
+
+  switch (msg.type) {
+    case 'init':
+      // Set initial state
+      if (msg.payload.previewHtml) {
+        iframe.srcdoc = msg.payload.previewHtml;
+      }
+      updateStatus(msg.payload.status);
+      break;
+
+    case 'preview:updated':
+      iframe.srcdoc = msg.payload.html;
+      // msg.payload.version is the version number
+      break;
+
+    case 'status':
+      updateStatus(msg.payload.status);
+      // "idle" → enable Generate button
+      // "generating"/"revising" → show spinner, disable button
+      break;
+
+    case 'progress':
+      showProgressMessage(msg.payload.message);
+      // Show under the preview or in a status bar
+      break;
   }
 };
 ```
 
 ## Typical User Flow
 
-1. **App loads** → PTY is already running (started eagerly on backend boot). Connect `/ws/terminal` to show Claude Code terminal. Optionally poll `GET /api/health` to check `pty.ready`.
-2. **User drags blocks** → `POST /api/state/layout` (update layout on every change)
-3. **User clicks Generate** → `POST /api/generate` (injects prompt into Claude)
-4. **Claude works** → visible in terminal via `/ws/terminal`
-5. **Claude finishes** → `preview:updated` fires on `/ws/ui` → render in iframe
-6. **User types feedback** → `POST /api/revise` (injects revision prompt)
-7. **Claude revises** → another `preview:updated` → iframe updates
+1. **App loads** → PTY is already running. Connect `/ws/terminal` for terminal panel. `/ws/ui` sends `init` with current state.
+2. **User drags blocks** → `POST /api/state/layout` on every change
+3. **User clicks Generate** → `POST /api/generate`
+   - If 409: already generating (disable button based on status WS messages)
+   - If 503: PTY not ready (show loading, retry)
+4. **Claude works** → `status` WS message: `"generating"`. `progress` messages show what's happening. Terminal shows Claude working.
+5. **Claude finishes** → `preview:updated` on `/ws/ui` → render in iframe. `status` → `"idle"`.
+6. **User types feedback** → `POST /api/revise`
+7. **Claude revises** → `status` → `"revising"`, then `preview:updated` → iframe updates
+8. **User clicks Export** → `GET /api/export` downloads `website.html`
+9. **User clicks Undo** → `POST /api/state/preview/revert/:version` restores previous version
+
+## Error Handling
+
+- **Generation timeout**: If Claude takes >90s, the backend auto-retries once, then resets to idle. The frontend will see `status: "idle"` and a progress message `"Generation failed — try again"`.
+- **PTY crash**: The backend auto-restarts the PTY after 2s. The frontend can poll `/api/health` to check `pty.ready`.
+- **Duplicate requests**: The 409 response prevents stacking. Use the `status` WS messages to disable the Generate button during generation.
 
 ## Mapping the Current Frontend to the Backend
-
-The current frontend generates a markdown spec. To integrate with the backend, the frontend needs to translate its internal state into a `PageLayout` object. Here's the mapping:
 
 | Frontend State | Backend Field |
 |---|---|
