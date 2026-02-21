@@ -49,17 +49,6 @@ stateRouter.post('/preview', (req, res) => {
   res.json({ ok: true });
 });
 
-// Progress preview — work-in-progress HTML that doesn't create a version
-stateRouter.post('/preview/progress', (req, res) => {
-  const { html } = req.body;
-  if (!html) {
-    res.status(400).json({ error: 'Missing html' });
-    return;
-  }
-  store.emitPreviewProgress(html);
-  res.json({ ok: true });
-});
-
 // Preview versions
 stateRouter.get('/preview/versions', (_req, res) => {
   const versions = store.getPreviewVersions().map(({ version, timestamp }) => ({

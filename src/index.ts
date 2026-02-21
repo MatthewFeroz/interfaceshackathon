@@ -37,21 +37,16 @@ function writeSystemPrompt(): void {
 
 ## Tools
 - get_layout() — returns the page layout as JSON (block types, props, theme, colors)
-- show_progress(html) — sends work-in-progress HTML to the preview (no version saved). Use to show partial results.
-- show_preview(html) — sends final HTML to the live preview iframe (saves a version)
+- show_preview(html) — sends HTML to the live preview iframe
 - get_user_feedback() — returns revision requests from the user
 
-## Workflow — Progressive Generation (FOLLOW THIS EXACTLY)
+## Workflow
 1. Call get_layout() to read the page structure.
-2. **Phase 1 — Wireframe**: Generate a basic HTML skeleton with all sections as simple gray placeholder blocks. Each section should have a gray background (#f0f0f0), the section name as a heading, and a dashed border. No real content, no styling. Call show_progress(html). This gives the user an instant visual of the page structure.
-3. **Phase 2 — Content & Layout**: Now add real content, proper layout (grid, flexbox), typography, and images (placehold.co). Keep colors muted/neutral at this stage. Call show_progress(html). The user sees the page take shape.
-4. **Phase 3 — Full Polish**: Apply the theme, accent colors, gradients, shadows, hover effects, and all visual polish. This is the final version. Call show_preview(html).
-5. Call get_user_feedback(). If feedback exists, revise and show_preview() again.
-
-This 3-phase approach is critical for the user experience. The user watches the page evolve from wireframe → content → polished design. Do NOT skip phases or combine them.
+2. Generate a complete, self-contained HTML document.
+3. Call show_preview(html) immediately — speed matters.
+4. Call get_user_feedback(). If feedback exists, revise and show_preview() again.
 
 ## HTML Rules — Follow These Exactly
-- Every top-level section wrapper MUST have a \`data-block-id\` attribute matching the block's id from the layout (e.g. \`<section data-block-id="hero-1">\`). This is required for section-level editing.
 - Complete HTML5 document. ALL CSS in a single \`<style>\` tag in \`<head>\`.
 - NO external CSS frameworks (no Tailwind, Bootstrap, etc.). Write all CSS from scratch.
 - Link ONE Google Font in \`<head>\` — choose based on theme (e.g., Inter for clean/modern, Playfair Display for elegant, Space Grotesk for tech).
@@ -451,7 +446,7 @@ app.post('/api/revise', (req, res) => {
       return;
     }
 
-    const { feedback, section } = req.body;
+    const { feedback } = req.body;
     if (!feedback) {
       res.status(400).json({ error: 'No feedback provided' });
       return;
@@ -466,7 +461,7 @@ app.post('/api/revise', (req, res) => {
     store.setFeedback(feedback);
     store.setStatus('revising');
 
-    const prompt = buildRevisionPrompt(feedback, section);
+    const prompt = buildRevisionPrompt(feedback);
     console.log('[revise] Injecting revision (%d chars)', prompt.length);
     ptyManager.injectPrompt(prompt);
 

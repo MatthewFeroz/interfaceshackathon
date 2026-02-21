@@ -67,30 +67,6 @@ server.tool(
   },
 );
 
-// Tool: show_progress
-server.tool(
-  'show_progress',
-  'Sends work-in-progress HTML to the preview. Use this to show partial results while still generating. Unlike show_preview, this does not save a version.',
-  { html: z.string().describe('The work-in-progress HTML to preview') },
-  async ({ html }) => {
-    try {
-      await fetchJson('/api/state/preview/progress', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ html }),
-      });
-      return {
-        content: [{ type: 'text', text: 'Progress preview sent.' }],
-      };
-    } catch (err) {
-      return {
-        content: [{ type: 'text', text: `Error sending progress: ${err}` }],
-        isError: true,
-      };
-    }
-  },
-);
-
 // Tool: get_user_feedback
 server.tool(
   'get_user_feedback',
