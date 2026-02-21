@@ -8,7 +8,7 @@ Hackathon project. A web app where small business owners drag component blocks i
 
 - **Frontend** (`frontend/`): React + Vite drag-and-drop builder. Runs on `:5173`.
 - **Backend** (`src/`): Express + WebSocket server. Runs on `:3001`.
-- **MCP Server** (`mcp-server/`): Stdio MCP server spawned by Claude Code. 3 tools: `get_layout`, `show_preview`, `get_user_feedback`.
+- **MCP Server** (`mcp-server/`): Stdio MCP server spawned by Claude Code. 4 tools: `get_layout`, `get_current_html`, `show_preview`, `get_user_feedback`.
 - **Workspace** (`workspace/`): Working directory for Claude Code. `CLAUDE.md` is auto-generated at startup.
 
 ## Running
@@ -35,7 +35,7 @@ cd frontend && npm run dev
 | `src/pty/ws-bridge.ts` | WebSocket ↔ PTY pipe for xterm.js |
 | `src/prompt/builder.ts` | Layout JSON → natural language prompt |
 | `src/ws/ui.ts` | Push preview updates to frontend |
-| `mcp-server/src/index.ts` | MCP stdio server with 3 tools |
+| `mcp-server/src/index.ts` | MCP stdio server with 4 tools |
 
 ## API Endpoints
 
@@ -45,7 +45,13 @@ cd frontend && npm run dev
 | GET/POST | `/api/state/layout` | Page layout (blocks, theme, etc.) |
 | GET/POST | `/api/state/preview` | Generated HTML preview |
 | GET/POST | `/api/state/feedback` | User feedback for revisions |
-| POST | `/api/generate` | Trigger Claude to generate from layout |
+| POST | `/api/generate` | Trigger Claude to generate/update from layout |
+| POST | `/api/revise` | Send feedback, Claude edits existing HTML |
+| GET | `/api/export` | Download current preview as HTML file |
+| GET | `/api/blocks` | List supported block types |
+| GET | `/api/themes` | List supported themes |
+| GET | `/api/templates` | List starter templates |
+| GET | `/api/templates/:id` | Get full template layout |
 | POST | `/api/pty/start` | Start Claude Code PTY |
 | POST | `/api/save-prompt` | Legacy: save markdown prompt to disk |
 
@@ -69,4 +75,5 @@ cd mcp-server && npx tsc
 - TypeScript with ES modules (`"type": "module"`)
 - `.js` extensions in imports (required for ESM)
 - MCP server logs to stderr only (stdout is MCP protocol)
-- All state is in-memory (no database)
+- All state is in-memory, persisted to workspace/state.json
+- Revisions are stateful: Claude reads existing HTML before editing (never rebuilds from scratch)
