@@ -1011,6 +1011,22 @@
   flex-direction: column;
   border-left: 1px solid var(--border);
   overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+.right-panel.preview-expanded {
+  position: fixed;
+  inset: 48px 0 52px 240px; /* below header, above bottom bar, right of sidebar */
+  width: auto;
+  min-width: unset;
+  max-width: unset;
+  z-index: 50;
+  border-left: 1px solid var(--border);
+  background: var(--bg-primary);
+}
+
+.right-panel.preview-expanded .terminal-panel {
+  display: none;
 }
 
 /* ── Preview Panel ──────────────────────────────────────────────────────── */
@@ -1023,6 +1039,33 @@
   background: var(--bg-secondary);
   border-bottom: 1px solid var(--border);
   position: relative;
+}
+
+.preview-toggle {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 10;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: var(--bg-secondary);
+  color: var(--text-muted);
+  font-size: 14px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+  opacity: 0.7;
+}
+
+.preview-toggle:hover {
+  opacity: 1;
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--accent-faint);
 }
 
 .preview-iframe {
