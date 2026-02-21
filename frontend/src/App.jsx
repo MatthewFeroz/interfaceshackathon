@@ -11,6 +11,53 @@ import {
 import TerminalPanel from './TerminalPanel'
 import './App.css'
 
+// ─── Sound effects (Web Audio API) ───────────────────────────────────────────
+const audioCtx = typeof window !== 'undefined' ? new (window.AudioContext || window.webkitAudioContext)() : null
+
+function playPing() {
+  if (!audioCtx) return
+  if (audioCtx.state === 'suspended') audioCtx.resume()
+  const osc = audioCtx.createOscillator()
+  const gain = audioCtx.createGain()
+  osc.connect(gain)
+  gain.connect(audioCtx.destination)
+  osc.type = 'triangle'
+  osc.frequency.setValueAtTime(880, audioCtx.currentTime)
+  osc.frequency.exponentialRampToValueAtTime(1320, audioCtx.currentTime + 0.05)
+  osc.frequency.exponentialRampToValueAtTime(660, audioCtx.currentTime + 0.12)
+  gain.gain.setValueAtTime(0.25, audioCtx.currentTime)
+  gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.18)
+  osc.start(audioCtx.currentTime)
+  osc.stop(audioCtx.currentTime + 0.18)
+}
+
+function playPlop() {
+  if (!audioCtx) return
+  if (audioCtx.state === 'suspended') audioCtx.resume()
+  const osc = audioCtx.createOscillator()
+  const gain = audioCtx.createGain()
+  osc.connect(gain)
+  gain.connect(audioCtx.destination)
+  osc.type = 'sine'
+  osc.frequency.setValueAtTime(400, audioCtx.currentTime)
+  osc.frequency.exponentialRampToValueAtTime(120, audioCtx.currentTime + 0.15)
+  gain.gain.setValueAtTime(0.35, audioCtx.currentTime)
+  gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.22)
+  osc.start(audioCtx.currentTime)
+  osc.stop(audioCtx.currentTime + 0.22)
+  const osc2 = audioCtx.createOscillator()
+  const gain2 = audioCtx.createGain()
+  osc2.connect(gain2)
+  gain2.connect(audioCtx.destination)
+  osc2.type = 'sine'
+  osc2.frequency.setValueAtTime(250, audioCtx.currentTime + 0.08)
+  osc2.frequency.exponentialRampToValueAtTime(80, audioCtx.currentTime + 0.2)
+  gain2.gain.setValueAtTime(0.2, audioCtx.currentTime + 0.08)
+  gain2.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.28)
+  osc2.start(audioCtx.currentTime + 0.08)
+  osc2.stop(audioCtx.currentTime + 0.28)
+}
+
 const API_BASE = 'http://localhost:3001'
 const UI_WS = 'ws://localhost:3001/ws/ui'
 
@@ -122,21 +169,6 @@ const MARKETING_LEVELS = [
           { id: 'urg-seasonal', label: 'Seasonal' },
           { id: 'urg-launching', label: 'Launching soon' },
           { id: 'custom-urgency-offer', label: 'Custom' },
-        ],
-      },
-    ],
-  },
-  {
-    id: 'length', step: 5, label: 'Page Length',
-    questions: [
-      {
-        id: 'length-pref', prompt: 'My page should be ________', type: 'tags', selectMode: 'single',
-        impact: 'Controls content depth',
-        tags: [
-          { id: 'len-short', label: 'Short & punchy' },
-          { id: 'len-medium', label: 'Medium' },
-          { id: 'len-long', label: 'Long form' },
-          { id: 'custom-length-pref', label: 'Custom' },
         ],
       },
     ],
@@ -560,22 +592,36 @@ function BriefQuestionSlot({ question, answer, onRemoveTag, onTextChange, onClea
 function MarketingBriefCard({ level, answers, onRemoveTag, onTextChange, onClearQuestion, locked }) {
   if (locked) {
     return (
-      <div className="marketing-brief marketing-brief-locked">
-        <div className="brief-title">{level.label}</div>
-        <div className="brief-subtitle">Complete the sections above to unlock</div>
+      <div className="funnel-section marketing-brief-locked">
+        <div className="funnel-section-header">
+          <div className="funnel-section-info">
+            <div className="funnel-section-title">{level.label}</div>
+          </div>
+          <div className="funnel-section-step">{level.step}</div>
+        </div>
+        <div className="funnel-section-body">
+          <div className="brief-slot-empty">Complete the sections above to unlock</div>
+        </div>
       </div>
     )
   }
   return (
-    <div className="marketing-brief">
-      <div className="brief-title">{level.label}</div>
-      <div className="brief-subtitle">Drag answers from the sidebar</div>
-      {level.questions.map(q => (
-        <BriefQuestionSlot
-          key={q.id} question={q} answer={answers[q.id]}
-          onRemoveTag={onRemoveTag} onTextChange={onTextChange} onClearQuestion={onClearQuestion}
-        />
-      ))}
+    <div className="funnel-section">
+      <div className="funnel-section-header">
+        <div className="funnel-section-info">
+          <div className="funnel-section-title">{level.label}</div>
+          <div className="funnel-section-subtitle">Drag answers from the sidebar</div>
+        </div>
+        <div className="funnel-section-step">{level.step}</div>
+      </div>
+      <div className="funnel-section-body">
+        {level.questions.map(q => (
+          <BriefQuestionSlot
+            key={q.id} question={q} answer={answers[q.id]}
+            onRemoveTag={onRemoveTag} onTextChange={onTextChange} onClearQuestion={onClearQuestion}
+          />
+        ))}
+      </div>
     </div>
   )
 }
@@ -603,7 +649,6 @@ export default function App() {
     'tone-brand':    { selectedTags: [], freeText: '' },
     'cred-have':     { selectedTags: [], detailText: '' },
     'urgency-offer': { selectedTags: [], freeText: '' },
-    'length-pref':   { selectedTags: [], freeText: '' },
   })
   const [expandedLevel, setExpandedLevel] = useState('core')
 
@@ -617,6 +662,10 @@ export default function App() {
   const [feedback,       setFeedback]       = useState('')
   const [loading,        setLoading]        = useState(false)
   const [toast,          setToast]          = useState('')
+  const [previewExpanded, setPreviewExpanded] = useState(false)
+
+  // Sound toggle
+  const [soundOn, setSoundOn] = useState(true)
 
   // Terminal
   const terminalRef = useRef(null)
@@ -632,11 +681,13 @@ export default function App() {
 
   const handleDragStart = ({ active }) => {
     setActiveBlock(active.data.current?.block ?? null)
+    if (soundOn) playPing()
   }
 
   const handleDragEnd = ({ active, over }) => {
     setActiveBlock(null)
     if (!over) return
+    if (soundOn) playPlop()
     const block = active.data.current?.block
     if (!block) return
     const targetId = over.id
@@ -889,6 +940,13 @@ export default function App() {
           </div>
 
           <div className="header-controls">
+            <button
+              className={`sound-toggle ${soundOn ? 'on' : ''}`}
+              onClick={() => setSoundOn(s => !s)}
+              title={soundOn ? 'Mute sounds' : 'Unmute sounds'}
+            >
+              {soundOn ? '\u{1F50A}' : '\u{1F507}'}
+            </button>
             {/* App UI theme switcher */}
             <div className="theme-switcher">
               {APP_THEMES.map(t => (
@@ -1061,9 +1119,18 @@ export default function App() {
           </main>
 
           {/* ── Right Panel: Preview + Terminal ── */}
-          <div className="right-panel">
+          <div className={`right-panel ${previewExpanded ? 'preview-expanded' : ''}`}>
             {/* Preview iframe */}
             <div className={`preview-panel ${previewHtml ? 'has-preview' : ''}`}>
+              {previewHtml && (
+                <button
+                  className="preview-toggle"
+                  onClick={() => setPreviewExpanded(prev => !prev)}
+                  title={previewExpanded ? 'Collapse preview' : 'Expand preview'}
+                >
+                  {previewExpanded ? '⤡' : '⤢'}
+                </button>
+              )}
               {previewHtml ? (
                 <iframe
                   className="preview-iframe"
