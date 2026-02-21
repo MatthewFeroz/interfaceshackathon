@@ -1000,21 +1000,140 @@
   backdrop-filter: blur(8px);
 }
 
+/* ── Right Panel (Preview + Terminal stack) ─────────────────────────────── */
+
+.right-panel {
+  width: 40%;
+  min-width: 380px;
+  max-width: 640px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  border-left: 1px solid var(--border);
+  overflow: hidden;
+}
+
+/* ── Preview Panel ──────────────────────────────────────────────────────── */
+
+.preview-panel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 100px;
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border);
+  position: relative;
+}
+
+.preview-iframe {
+  flex: 1;
+  width: 100%;
+  border: none;
+  background: #ffffff;
+}
+
+.preview-empty {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.preview-empty-text {
+  font-size: 14px;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.preview-empty-hint {
+  font-size: 12px;
+  color: var(--text-muted);
+  opacity: 0.6;
+}
+
+.revision-bar {
+  display: flex;
+  gap: 8px;
+  padding: 10px 12px;
+  border-top: 1px solid var(--border);
+  background: var(--bg-tertiary);
+  flex-shrink: 0;
+}
+
+.revision-input {
+  flex: 1;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text-primary);
+  font-size: 13px;
+  padding: 7px 12px;
+  outline: none;
+  font-family: 'IBM Plex Sans', inherit;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.revision-input:focus {
+  border-color: var(--accent);
+  box-shadow: var(--focus-ring);
+}
+
+.revision-input::placeholder {
+  color: var(--text-muted);
+}
+
+.btn-revise {
+  padding: 7px 16px;
+  background: var(--accent);
+  border: none;
+  border-radius: var(--radius);
+  color: white;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: opacity 0.2s ease;
+}
+
+.btn-revise:hover { opacity: 0.9; }
+.btn-revise:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* ── Backend Status ─────────────────────────────────────────────────────── */
+
+.backend-status {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.backend-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  transition: background 0.3s;
+}
+
+.backend-label {
+  font-size: 11px;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
 /* ── Terminal Panel ──────────────────────────────────────────────────────── */
 
 .terminal-panel {
-  width: 0;
+  flex: 1;
+  min-height: 200px;
   overflow: hidden;
   display: flex;
   flex-direction: column;
   background: #080c14;
-  border-left: 1px solid var(--border);
-  transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  flex-shrink: 0;
-}
-
-.terminal-panel.open {
-  width: 480px;
 }
 
 .terminal-header {

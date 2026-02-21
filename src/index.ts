@@ -175,6 +175,14 @@ app.post('/api/generate', (_req, res) => {
     console.log('[generate] Injecting prompt (%d chars)', prompt.length);
     ptyManager.injectPrompt(prompt);
 
+    // Auto-reset status after 2 minutes if Claude doesn't respond
+    setTimeout(() => {
+      if (store.getStatus() === 'generating') {
+        console.log('[generate] Timeout — resetting status to idle');
+        store.setStatus('idle');
+      }
+    }, 120_000);
+
     res.json({ ok: true });
   } catch (err) {
     console.error('[api] Generate failed:', err);
@@ -208,6 +216,14 @@ app.post('/api/revise', (req, res) => {
     const prompt = buildRevisionPrompt(feedback);
     console.log('[revise] Injecting revision (%d chars)', prompt.length);
     ptyManager.injectPrompt(prompt);
+
+    // Auto-reset status after 2 minutes if Claude doesn't respond
+    setTimeout(() => {
+      if (store.getStatus() === 'revising') {
+        console.log('[revise] Timeout — resetting status to idle');
+        store.setStatus('idle');
+      }
+    }, 120_000);
 
     res.json({ ok: true });
   } catch (err) {
