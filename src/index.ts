@@ -191,9 +191,13 @@ ptyManager.on('data', (data: string) => {
   }
 });
 
+// Warm PTY cache — tracks whether warmup has been sent (declared early, used by exit + ready handlers)
+let warmupDone = false;
+
 // Auto-restart PTY on crash
 ptyManager.on('exit', (exitCode: number, signal: number) => {
   console.log(`[pty] Exited unexpectedly (code=${exitCode}, signal=${signal}), restarting in 2s...`);
+  warmupDone = false; // Re-warm after restart
   setTimeout(() => {
     if (!ptyManager.isRunning()) {
       ptyManager.start();
@@ -341,6 +345,24 @@ server.on('upgrade', (request, socket, head) => {
   } else {
     socket.destroy();
   }
+});
+
+// ── Warm PTY cache ─────────────────────────────────────────────────────────
+
+// On first ready, inject a lightweight warmup prompt to force MCP tool loading.
+// This makes the first real generation faster since tools are already cached.
+ptyManager.on('ready', () => {
+  if (warmupDone) return;
+  warmupDone = true;
+
+  console.log('[warmup] PTY ready — warming up MCP tools...');
+  // Small delay to let Claude fully settle after showing the prompt
+  setTimeout(() => {
+    if (ptyManager.isReady()) {
+      ptyManager.injectPrompt('Call get_layout() to verify tools are connected. Just call the tool and say "Ready." Nothing else.');
+      console.log('[warmup] Warmup prompt injected');
+    }
+  }, 1000);
 });
 
 // ── Startup ────────────────────────────────────────────────────────────────
