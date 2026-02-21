@@ -126,21 +126,6 @@ const MARKETING_LEVELS = [
       },
     ],
   },
-  {
-    id: 'length', step: 5, label: 'Page Length',
-    questions: [
-      {
-        id: 'length-pref', prompt: 'My page should be ________', type: 'tags', selectMode: 'single',
-        impact: 'Controls content depth',
-        tags: [
-          { id: 'len-short', label: 'Short & punchy' },
-          { id: 'len-medium', label: 'Medium' },
-          { id: 'len-long', label: 'Long form' },
-          { id: 'custom-length-pref', label: 'Custom' },
-        ],
-      },
-    ],
-  },
 ]
 
 // ─── Component block definitions ────────────────────────────────────────────
@@ -603,7 +588,6 @@ export default function App() {
     'tone-brand':    { selectedTags: [], freeText: '' },
     'cred-have':     { selectedTags: [], detailText: '' },
     'urgency-offer': { selectedTags: [], freeText: '' },
-    'length-pref':   { selectedTags: [], freeText: '' },
   })
   const [expandedLevel, setExpandedLevel] = useState('core')
 
