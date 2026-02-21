@@ -152,6 +152,11 @@ app.post('/api/pty/restart', (_req, res) => {
 // Generate: inject prompt into PTY
 app.post('/api/generate', (_req, res) => {
   try {
+    if (store.getStatus() !== 'idle') {
+      res.status(409).json({ error: 'Generation already in progress' });
+      return;
+    }
+
     const layout = store.getLayout();
     if (!layout.blocks.length) {
       res.status(400).json({ error: 'No blocks in layout' });
@@ -180,6 +185,11 @@ app.post('/api/generate', (_req, res) => {
 // Revise: post feedback and inject revision prompt into PTY
 app.post('/api/revise', (req, res) => {
   try {
+    if (store.getStatus() !== 'idle') {
+      res.status(409).json({ error: 'Generation already in progress' });
+      return;
+    }
+
     const { feedback } = req.body;
     if (!feedback) {
       res.status(400).json({ error: 'No feedback provided' });
