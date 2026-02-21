@@ -14,6 +14,120 @@ import './App.css'
 const API_BASE = 'http://localhost:3001'
 const UI_WS = 'ws://localhost:3001/ws/ui'
 
+// ─── Marketing questionnaire (5 levels) ─────────────────────────────────────
+
+const MARKETING_LEVELS = [
+  {
+    id: 'core', step: 1, label: 'Core Marketing',
+    questions: [
+      {
+        id: 'core-help', prompt: 'I help ________', type: 'tags', selectMode: 'multi',
+        impact: 'Defines your target audience',
+        tags: [
+          { id: 'aud-entrepreneurs', label: 'Entrepreneurs' },
+          { id: 'aud-parents', label: 'Parents' },
+          { id: 'aud-freelancers', label: 'Freelancers' },
+          { id: 'aud-students', label: 'Students' },
+          { id: 'aud-smb', label: 'Small Businesses' },
+          { id: 'aud-creators', label: 'Creators' },
+          { id: 'aud-health', label: 'Health-conscious' },
+          { id: 'aud-professionals', label: 'Professionals' },
+          { id: 'custom-core-help', label: 'Custom' },
+        ],
+      },
+      {
+        id: 'core-achieve', prompt: 'Achieve ________', type: 'tags', selectMode: 'multi',
+        impact: 'Key outcomes you deliver',
+        tags: [
+          { id: 'goal-save-time', label: 'Save time' },
+          { id: 'goal-make-money', label: 'Make money' },
+          { id: 'goal-get-fit', label: 'Get fit' },
+          { id: 'goal-learn-skill', label: 'Learn a skill' },
+          { id: 'goal-grow-biz', label: 'Grow their business' },
+          { id: 'goal-peace', label: 'Peace of mind' },
+          { id: 'goal-connect', label: 'Connect with others' },
+          { id: 'goal-simplify', label: 'Simplify life' },
+          { id: 'custom-core-achieve', label: 'Custom' },
+        ],
+      },
+      {
+        id: 'core-selling', prompt: 'By selling ________', type: 'tags', selectMode: 'single',
+        impact: 'Your product or service',
+        tags: [{ id: 'custom-core-selling', label: 'Custom' }],
+      },
+      {
+        id: 'core-cta', prompt: 'I want visitors to ________', type: 'tags', selectMode: 'single',
+        impact: 'Primary call-to-action',
+        tags: [
+          { id: 'cta-buy', label: 'Buy now' },
+          { id: 'cta-signup', label: 'Sign up' },
+          { id: 'cta-book', label: 'Book a call' },
+          { id: 'cta-download', label: 'Download' },
+          { id: 'cta-subscribe', label: 'Subscribe' },
+          { id: 'cta-contact', label: 'Contact us' },
+          { id: 'custom-core-cta', label: 'Custom' },
+        ],
+      },
+    ],
+  },
+  {
+    id: 'tone', step: 2, label: 'Tone & Brand',
+    questions: [
+      {
+        id: 'tone-brand', prompt: 'My brand feels ________', type: 'tags', selectMode: 'multi',
+        impact: 'Sets voice and visual style',
+        tags: [
+          { id: 'tone-bold', label: 'Bold' },
+          { id: 'tone-friendly', label: 'Friendly' },
+          { id: 'tone-teaching', label: 'Educational' },
+          { id: 'tone-professional', label: 'Professional' },
+          { id: 'tone-playful', label: 'Playful' },
+          { id: 'tone-luxury', label: 'Luxury' },
+          { id: 'tone-minimal', label: 'Minimal' },
+          { id: 'tone-warm', label: 'Warm' },
+          { id: 'custom-tone-brand', label: 'Custom' },
+        ],
+      },
+    ],
+  },
+  {
+    id: 'cred', step: 3, label: 'Credibility',
+    questions: [
+      {
+        id: 'cred-have', prompt: 'I have ________', type: 'tags', selectMode: 'multi',
+        impact: 'Builds trust with visitors', conditional: true,
+        tags: [
+          { id: 'cred-10years', label: '10+ years experience' },
+          { id: 'cred-logos', label: 'Client logos' },
+          { id: 'cred-casestudy', label: 'Case studies' },
+          { id: 'cred-media', label: 'Media mentions' },
+          { id: 'cred-testimonials', label: 'Testimonials' },
+          { id: 'cred-certs', label: 'Certifications' },
+          { id: 'cred-none', label: 'None yet' },
+          { id: 'custom-cred-have', label: 'Custom' },
+        ],
+      },
+    ],
+  },
+  {
+    id: 'urgency', step: 4, label: 'Urgency & Motivation',
+    questions: [
+      {
+        id: 'urgency-offer', prompt: 'My offer is ________', type: 'tags', selectMode: 'single',
+        impact: 'Drives conversion urgency',
+        tags: [
+          { id: 'urg-limited', label: 'Limited time' },
+          { id: 'urg-evergreen', label: 'Evergreen' },
+          { id: 'urg-spots', label: 'Limited spots' },
+          { id: 'urg-seasonal', label: 'Seasonal' },
+          { id: 'urg-launching', label: 'Launching soon' },
+          { id: 'custom-urgency-offer', label: 'Custom' },
+        ],
+      },
+    ],
+  },
+]
+
 // ─── Component block definitions ────────────────────────────────────────────
 
 const COMPONENT_GROUPS = [
@@ -281,6 +395,176 @@ function ImageSection({ images, onAddUrl, onUpload, onRemove }) {
   )
 }
 
+// ─── Draggable tag in sidebar ────────────────────────────────────────────────
+
+function DraggableTag({ tag, selected, onToggle, selectMode, questionId }) {
+  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
+    id: `sidebar-${tag.id}`,
+    data: { block: tag, questionId, selectMode },
+  })
+
+  return (
+    <div
+      ref={setNodeRef}
+      {...listeners}
+      {...attributes}
+      className={`sidebar-tag ${selected ? 'selected' : ''} ${isDragging ? 'dragging' : ''} ${selectMode === 'single' ? 'single-select' : ''}`}
+      onClick={onToggle}
+    >
+      {selectMode === 'single' && (
+        <span className="tag-radio">{selected ? '*' : 'o'}</span>
+      )}
+      <span>{tag.label}</span>
+    </div>
+  )
+}
+
+// ─── Question block (sidebar) ────────────────────────────────────────────────
+
+function QuestionBlock({ question, answer, onTagToggle }) {
+  const { selectedTags = [] } = answer || {}
+  const hasNoneYet = question.conditional && selectedTags.includes('cred-none')
+
+  return (
+    <div className="question-block">
+      <div className="question-prompt">{question.prompt}</div>
+      {question.impact && <div className="question-impact-hint">{question.impact}</div>}
+      {question.tags.length > 0 && (
+        <div className="sidebar-tags">
+          {question.tags.map(tag => (
+            <DraggableTag
+              key={tag.id}
+              tag={tag}
+              selected={selectedTags.includes(tag.id)}
+              onToggle={tag.id.startsWith('custom-') ? undefined : () => onTagToggle(question.id, tag.id, question.selectMode)}
+              selectMode={question.selectMode}
+              questionId={question.id}
+            />
+          ))}
+        </div>
+      )}
+      {hasNoneYet && (
+        <div className="question-conditional-info">
+          No worries! We will add a guarantee section to build trust.
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ─── Level accordion (sidebar) ───────────────────────────────────────────────
+
+function LevelAccordion({ level, isExpanded, onToggle, answers, onTagToggle }) {
+  const completionCount = level.questions.reduce((count, q) => {
+    const a = answers[q.id]
+    if (!a) return count
+    const hasTags = (a.selectedTags || []).length > 0
+    const hasText = (a.freeText || '').trim() || (a.detailText || '').trim()
+    return count + (hasTags || hasText ? 1 : 0)
+  }, 0)
+
+  return (
+    <div className={`level-accordion ${isExpanded ? 'expanded' : ''}`}>
+      <button className="level-header" onClick={onToggle}>
+        <span className="level-step">{level.step}</span>
+        <span className="level-label">{level.label}</span>
+        {completionCount > 0 && (
+          <span className="level-count">{completionCount}/{level.questions.length}</span>
+        )}
+        <span className="level-chevron">{isExpanded ? 'v' : '>'}</span>
+      </button>
+      {isExpanded && (
+        <div className="level-body">
+          {level.questions.map(q => (
+            <QuestionBlock key={q.id} question={q} answer={answers[q.id]} onTagToggle={onTagToggle} />
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ─── Brief Question Slot (droppable) ─────────────────────────────────────────
+
+function BriefQuestionSlot({ question, answer, onRemoveTag, onTextChange, onClearQuestion }) {
+  const { isOver, setNodeRef } = useDroppable({ id: `brief-${question.id}` })
+  const { selectedTags = [], freeText = '', detailText = '' } = answer || {}
+  const hasTags = selectedTags.length > 0
+  const hasContent = hasTags || (freeText || '').trim() || (detailText || '').trim()
+  const hasNoneYet = question.conditional && selectedTags.includes('cred-none')
+  const hasRealCredTags = question.conditional && hasTags && !hasNoneYet
+  const resolvedTags = selectedTags.map(tid => question.tags.find(t => t.id === tid)).filter(Boolean)
+
+  return (
+    <div ref={setNodeRef} className={`brief-slot ${isOver ? 'drag-over' : ''}`}>
+      <div className="brief-slot-header">
+        <div className="brief-slot-prompt">{question.prompt.replace('________', '...')}</div>
+        {hasContent && (
+          <button className="brief-slot-clear" onClick={() => onClearQuestion(question.id)}>Clear</button>
+        )}
+      </div>
+      {question.impact && <div className="brief-slot-impact">{question.impact}</div>}
+      {resolvedTags.length > 0 && (
+        <div className="brief-slot-tags">
+          {resolvedTags.map(tag => (
+            <span key={tag.id} className="brief-slot-tag">
+              <span>{tag.label}</span>
+              <button className="brief-slot-tag-remove" onClick={() => onRemoveTag(question.id, tag.id)}>x</button>
+            </span>
+          ))}
+        </div>
+      )}
+      {selectedTags.includes(`custom-${question.id}`) && (
+        <input
+          className="sidebar-prompt-input brief-slot-text-input"
+          placeholder="Type your custom answer..."
+          value={freeText}
+          onChange={e => onTextChange(question.id, 'freeText', e.target.value)}
+        />
+      )}
+      {hasNoneYet && (
+        <div className="question-conditional-info">No worries! We will add a guarantee section to build trust.</div>
+      )}
+      {hasRealCredTags && (
+        <input
+          className="sidebar-prompt-input brief-slot-text-input"
+          placeholder="Add details (e.g. '15 years in design')"
+          value={detailText}
+          onChange={e => onTextChange(question.id, 'detailText', e.target.value)}
+        />
+      )}
+      {!hasTags && !(freeText?.trim()) && (
+        <div className="brief-slot-empty">Drag answers here</div>
+      )}
+    </div>
+  )
+}
+
+// ─── Marketing Brief Card (one per level in funnel) ──────────────────────────
+
+function MarketingBriefCard({ level, answers, onRemoveTag, onTextChange, onClearQuestion, locked }) {
+  if (locked) {
+    return (
+      <div className="marketing-brief marketing-brief-locked">
+        <div className="brief-title">{level.label}</div>
+        <div className="brief-subtitle">Complete the sections above to unlock</div>
+      </div>
+    )
+  }
+  return (
+    <div className="marketing-brief">
+      <div className="brief-title">{level.label}</div>
+      <div className="brief-subtitle">Drag answers from the sidebar</div>
+      {level.questions.map(q => (
+        <BriefQuestionSlot
+          key={q.id} question={q} answer={answers[q.id]}
+          onRemoveTag={onRemoveTag} onTextChange={onTextChange} onClearQuestion={onClearQuestion}
+        />
+      ))}
+    </div>
+  )
+}
+
 // ─── Main App ─────────────────────────────────────────────────────────────────
 
 export default function App() {
@@ -294,6 +578,18 @@ export default function App() {
   const [customHex,      setCustomHex]      = useState('#6366f1')
   const [productDetails, setProductDetails] = useState('')
   const [images,         setImages]         = useState([])
+
+  // Marketing questionnaire state
+  const [answers, setAnswers] = useState({
+    'core-help':     { selectedTags: [], freeText: '' },
+    'core-achieve':  { selectedTags: [], freeText: '' },
+    'core-selling':  { selectedTags: [], freeText: '' },
+    'core-cta':      { selectedTags: [], freeText: '' },
+    'tone-brand':    { selectedTags: [], freeText: '' },
+    'cred-have':     { selectedTags: [], detailText: '' },
+    'urgency-offer': { selectedTags: [], freeText: '' },
+  })
+  const [expandedLevel, setExpandedLevel] = useState('core')
 
   // Blocks dropped into each funnel section
   const [droppedBlocks, setDroppedBlocks] = useState({
@@ -328,10 +624,22 @@ export default function App() {
     if (!over) return
     const block = active.data.current?.block
     if (!block) return
-    const sectionId = over.id
+    const targetId = over.id
+
+    // Handle drops onto marketing brief question slots
+    if (typeof targetId === 'string' && targetId.startsWith('brief-')) {
+      const targetQuestionId = targetId.replace('brief-', '')
+      const dragQuestionId = active.data.current?.questionId
+      const dragSelectMode = active.data.current?.selectMode
+      if (dragQuestionId !== targetQuestionId) return
+      toggleTag(targetQuestionId, block.id, dragSelectMode)
+      return
+    }
+
+    // Existing funnel section drop logic
     setDroppedBlocks(prev => {
-      if (prev[sectionId]?.some(b => b.id === block.id)) return prev
-      return { ...prev, [sectionId]: [...(prev[sectionId] || []), block] }
+      if (prev[targetId]?.some(b => b.id === block.id)) return prev
+      return { ...prev, [targetId]: [...(prev[targetId] || []), block] }
     })
   }
 
@@ -342,8 +650,74 @@ export default function App() {
     }))
   }
 
+  const removeTagFromBrief = (questionId, tagId) => {
+    setAnswers(prev => ({
+      ...prev,
+      [questionId]: {
+        ...prev[questionId],
+        selectedTags: (prev[questionId]?.selectedTags || []).filter(t => t !== tagId),
+      },
+    }))
+  }
+
+  const clearQuestion = (questionId) => {
+    setAnswers(prev => ({
+      ...prev,
+      [questionId]: { selectedTags: [], freeText: '', detailText: '' },
+    }))
+  }
+
   const toggleTech = id =>
     setSelectedTech(prev => prev.includes(id) ? prev.filter(t => t !== id) : [...prev, id])
+
+  // ── Marketing questionnaire helpers ──────────────────────────────────────
+  const toggleTag = (questionId, tagId, selectMode) => {
+    if (questionId === 'cred-have') return toggleCredTag(tagId)
+    const isCustom = tagId.startsWith('custom-')
+    setAnswers(prev => {
+      const cur = prev[questionId]?.selectedTags || []
+      const customId = `custom-${questionId}`
+      if (selectMode === 'single') {
+        if (isCustom) {
+          return { ...prev, [questionId]: { ...prev[questionId], selectedTags: cur.includes(tagId) ? [] : [tagId], freeText: cur.includes(tagId) ? '' : (prev[questionId]?.freeText || '') } }
+        }
+        return { ...prev, [questionId]: { ...prev[questionId], selectedTags: cur.includes(tagId) ? [] : [tagId], freeText: '' } }
+      }
+      if (isCustom) {
+        return { ...prev, [questionId]: { ...prev[questionId], selectedTags: cur.includes(tagId) ? [] : [tagId], freeText: cur.includes(tagId) ? '' : (prev[questionId]?.freeText || '') } }
+      }
+      const filtered = cur.filter(t => t !== customId)
+      return {
+        ...prev,
+        [questionId]: {
+          ...prev[questionId],
+          selectedTags: filtered.includes(tagId) ? filtered.filter(t => t !== tagId) : [...filtered, tagId],
+          freeText: '',
+        },
+      }
+    })
+  }
+
+  const toggleCredTag = (tagId) => {
+    setAnswers(prev => {
+      const cur = prev['cred-have']?.selectedTags || []
+      if (tagId === 'cred-none') {
+        return { ...prev, 'cred-have': { ...prev['cred-have'], selectedTags: cur.includes('cred-none') ? [] : ['cred-none'] } }
+      }
+      const filtered = cur.filter(t => t !== 'cred-none')
+      return {
+        ...prev,
+        'cred-have': {
+          ...prev['cred-have'],
+          selectedTags: filtered.includes(tagId) ? filtered.filter(t => t !== tagId) : [...filtered, tagId],
+        },
+      }
+    })
+  }
+
+  const setQuestionText = (questionId, field, value) => {
+    setAnswers(prev => ({ ...prev, [questionId]: { ...prev[questionId], [field]: value } }))
+  }
 
   const addImageUrl  = url  => setImages(prev => [...prev, { src: url, name: url, type: 'url' }])
   const removeImage  = idx  => setImages(prev => prev.filter((_, i) => i !== idx))
@@ -480,7 +854,12 @@ export default function App() {
     selectedTech.length +
     (productDetails ? 1 : 0) +
     images.length +
-    Object.values(droppedBlocks).flat().length
+    Object.values(droppedBlocks).flat().length +
+    Object.values(answers).reduce((n, a) => {
+      return n + (a.selectedTags || []).length +
+        ((a.freeText || '').trim() ? 1 : 0) +
+        ((a.detailText || '').trim() ? 1 : 0)
+    }, 0)
 
   return (
     <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
@@ -516,17 +895,19 @@ export default function App() {
           {/* ── Left Sidebar ── */}
           <aside className="sidebar">
             <div className="sidebar-header">
-              <div className="sidebar-title">Components</div>
-              <div className="sidebar-hint">Drag into sections</div>
+              <div className="sidebar-title">Your Brand</div>
+              <div className="sidebar-hint">Drag answers into the brief</div>
             </div>
             <div className="sidebar-body">
-              {COMPONENT_GROUPS.map(group => (
-                <div key={group.label} className="sidebar-group">
-                  <div className="sidebar-group-label">{group.label}</div>
-                  {group.blocks.map(block => (
-                    <DraggableBlock key={block.id} block={block} />
-                  ))}
-                </div>
+              {MARKETING_LEVELS.map(level => (
+                <LevelAccordion
+                  key={level.id}
+                  level={level}
+                  isExpanded={expandedLevel === level.id}
+                  onToggle={() => setExpandedLevel(prev => prev === level.id ? null : level.id)}
+                  answers={answers}
+                  onTagToggle={toggleTag}
+                />
               ))}
             </div>
           </aside>
@@ -536,8 +917,28 @@ export default function App() {
             <div className="funnel-wrapper">
               <h1 className="funnel-title">Build your site</h1>
               <p className="funnel-desc">
-                Pick a stack, choose a look, describe your business, and drop in components.
+                Pick a stack, choose a look, and drag in your marketing answers.
               </p>
+
+              {/* ── Marketing Brief (one card per level, progressive unlock) ── */}
+              {MARKETING_LEVELS.map((level, i) => {
+                const prevLevel = i > 1 ? MARKETING_LEVELS[i - 1] : null
+                const prevHasContent = prevLevel
+                  ? prevLevel.questions.some(q => {
+                      const a = answers[q.id]
+                      if (!a) return false
+                      return (a.selectedTags || []).length > 0 || (a.freeText || '').trim() || (a.detailText || '').trim()
+                    })
+                  : true
+                const locked = i >= 2 && !prevHasContent
+                return (
+                  <MarketingBriefCard
+                    key={level.id} level={level} answers={answers}
+                    onRemoveTag={removeTagFromBrief} onTextChange={setQuestionText}
+                    onClearQuestion={clearQuestion} locked={locked}
+                  />
+                )
+              })}
 
               {/* ── 1: Tech Stack ── */}
               <DroppableSection id="tech">
@@ -622,32 +1023,13 @@ export default function App() {
                 </div>
               </DroppableSection>
 
-              {/* ── 3: Product Details ── */}
-              <DroppableSection id="product">
-                <div className="funnel-section-header">
-                  <div className="funnel-section-info">
-                    <div className="funnel-section-title">About your business</div>
-                  </div>
-                  <div className="funnel-section-step">3</div>
-                </div>
-                <div className="funnel-section-body">
-                  <textarea
-                    className="product-textarea"
-                    placeholder="What does your business do? Who are your customers?"
-                    value={productDetails}
-                    onChange={e => setProductDetails(e.target.value)}
-                  />
-                  <DroppedBlocks section="product" blocks={droppedBlocks.product} onRemove={removeDroppedBlock} />
-                </div>
-              </DroppableSection>
-
-              {/* ── 4: Images ── */}
+              {/* ── 3: Images ── */}
               <DroppableSection id="images">
                 <div className="funnel-section-header">
                   <div className="funnel-section-info">
                     <div className="funnel-section-title">Images</div>
                   </div>
-                  <div className="funnel-section-step">4</div>
+                  <div className="funnel-section-step">3</div>
                 </div>
                 <div className="funnel-section-body">
                   <ImageSection

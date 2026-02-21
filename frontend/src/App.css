@@ -1379,3 +1379,97 @@
 .app[data-theme="vapor"] .color-swatch.selected {
   box-shadow: 0 0 0 2px #0a0a1a, 0 0 8px rgba(255,113,206,0.4);
 }
+
+/* ─── Marketing Questionnaire Styles ─────────────────────────────────────── */
+
+/* Sidebar tags */
+.sidebar-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--bg-secondary);
+  color: var(--text-secondary);
+  font-size: 12px;
+  cursor: grab;
+  transition: all 0.15s;
+  user-select: none;
+}
+.sidebar-tag:hover { border-color: var(--accent); color: var(--text-primary); }
+.sidebar-tag.selected { background: var(--accent); color: #fff; border-color: var(--accent); }
+.sidebar-tag.dragging { opacity: 0.4; }
+.sidebar-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+.tag-radio { font-size: 8px; margin-right: 2px; }
+
+/* Question block */
+.question-block { margin-bottom: 10px; }
+.question-prompt { font-size: 12px; font-weight: 600; color: var(--text-primary); margin-bottom: 2px; }
+.question-impact-hint { font-size: 10px; color: var(--text-muted); margin-bottom: 4px; }
+.question-conditional-info {
+  font-size: 11px; color: var(--text-muted); padding: 6px 8px;
+  background: var(--bg-tertiary); border-radius: 6px; margin-top: 6px;
+}
+
+/* Level accordion */
+.level-accordion { border-bottom: 1px solid var(--border); }
+.level-header {
+  display: flex; align-items: center; gap: 8px; width: 100%;
+  padding: 10px 12px; background: none; border: none;
+  color: var(--text-primary); font-size: 13px; cursor: pointer;
+  text-align: left; transition: background 0.15s;
+}
+.level-header:hover { background: var(--bg-tertiary); }
+.level-step {
+  width: 20px; height: 20px; border-radius: 50%;
+  background: var(--bg-tertiary); display: flex; align-items: center;
+  justify-content: center; font-size: 10px; font-weight: 700; flex-shrink: 0;
+}
+.level-label { flex: 1; font-weight: 600; }
+.level-count { font-size: 10px; color: var(--accent); font-weight: 600; }
+.level-chevron { font-size: 10px; color: var(--text-muted); }
+.level-body { padding: 4px 12px 12px; }
+
+/* Marketing brief card */
+.marketing-brief {
+  background: var(--bg-secondary); border: 1px solid var(--border);
+  border-radius: 12px; margin-bottom: 14px; padding: 14px 18px;
+}
+.brief-title { font-size: 14px; font-weight: 700; color: var(--text-primary); margin-bottom: 2px; }
+.brief-subtitle { font-size: 11px; color: var(--text-muted); margin-bottom: 14px; }
+.marketing-brief-locked { opacity: 0.45; pointer-events: none; }
+
+/* Brief slot */
+.brief-slot {
+  padding: 10px; border: 1px dashed var(--border); border-radius: 8px;
+  margin-bottom: 8px; transition: all 0.2s;
+}
+.brief-slot.drag-over { border-color: var(--accent); background: rgba(99,102,241,0.05); }
+.brief-slot-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2px; }
+.brief-slot-prompt { font-size: 11px; font-weight: 600; color: var(--text-secondary); }
+.brief-slot-impact { font-size: 10px; color: var(--text-muted); margin-bottom: 6px; }
+.brief-slot-empty { font-size: 11px; color: var(--text-muted); font-style: italic; }
+.brief-slot-clear {
+  background: none; border: none; color: var(--text-muted);
+  font-size: 10px; cursor: pointer; padding: 1px 6px; border-radius: 4px;
+  transition: all 0.15s;
+}
+.brief-slot-clear:hover { color: #f43f5e; background: rgba(244,63,94,0.1); }
+.brief-slot-tags { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 6px; }
+.brief-slot-tag {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 2px 8px; border-radius: 4px;
+  background: var(--accent); color: #fff; font-size: 11px;
+}
+.brief-slot-tag-remove {
+  background: none; border: none; color: rgba(255,255,255,0.7);
+  cursor: pointer; font-size: 12px; padding: 0 2px;
+}
+.brief-slot-tag-remove:hover { color: #fff; }
+.brief-slot-text-input {
+  width: 100%; padding: 6px 8px; border-radius: 6px;
+  border: 1px solid var(--border); background: var(--bg-primary);
+  color: var(--text-primary); font-size: 12px; margin-top: 4px;
+}
+.brief-slot-text-input:focus { outline: none; border-color: var(--accent); }

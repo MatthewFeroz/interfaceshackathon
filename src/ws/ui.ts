@@ -26,6 +26,10 @@ export function setupUiWs(server: Server): WebSocketServer {
     broadcast({ type: 'progress', payload: { message } });
   });
 
+  store.on('preview:progress', (html: string) => {
+    broadcast({ type: 'preview:progress', payload: { html } });
+  });
+
   // Heartbeat: ping every 30s, terminate if no pong within 10s
   const PING_INTERVAL = 30_000;
   const PONG_TIMEOUT = 10_000;
@@ -53,12 +57,12 @@ export function setupUiWs(server: Server): WebSocketServer {
       aliveMap.set(ws, true);
     });
 
-    // Send current state on connect
+    // Send current state on connect (live version includes editor script)
     ws.send(JSON.stringify({
       type: 'init',
       payload: {
         layout: store.getLayout(),
-        previewHtml: store.getPreviewHtml(),
+        previewHtml: store.getPreviewHtmlLive(),
         status: store.getStatus(),
       },
     }));
