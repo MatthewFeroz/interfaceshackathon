@@ -177,7 +177,6 @@ class Store extends EventEmitter {
           console.log(`[store] Generation timed out after ${GENERATION_TIMEOUT_MS / 1000}s, resetting to idle`);
           this.state.status = 'idle';
           this.emit('status:changed', 'idle');
-          this.emit('generation:timeout');
           this.statusTimer = null;
         }, GENERATION_TIMEOUT_MS);
       }

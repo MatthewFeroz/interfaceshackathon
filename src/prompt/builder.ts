@@ -32,68 +32,8 @@ function describeBlock(block: Block, index: number): string {
   return `${index + 1}. **${block.type}** — ${hint}`;
 }
 
-export function buildRevisionPrompt(feedback: string): string {
-  return `Revision request: "${feedback}"
-
-Steps:
-1. Call get_current_html() to get the existing page.
-2. Edit ONLY what the user asked for — preserve everything else.
-3. Call show_preview(html) with the modified HTML.
-
-Do NOT regenerate from scratch. Modify the existing HTML.`;
-}
-
-export function diffLayouts(prev: PageLayout, next: PageLayout): string[] {
-  const changes: string[] = [];
-
-  // Block order / additions / removals
-  const prevTypes = prev.blocks.map(b => b.type);
-  const nextTypes = next.blocks.map(b => b.type);
-  const prevIds = new Set(prev.blocks.map(b => b.id));
-  const nextIds = new Set(next.blocks.map(b => b.id));
-
-  for (const block of next.blocks) {
-    if (!prevIds.has(block.id)) {
-      changes.push(`Added "${block.type}" section`);
-    }
-  }
-  for (const block of prev.blocks) {
-    if (!nextIds.has(block.id)) {
-      changes.push(`Removed "${block.type}" section`);
-    }
-  }
-
-  // Order change (only if same blocks, different order)
-  if (prevTypes.length === nextTypes.length && prevTypes.some((t, i) => t !== nextTypes[i])) {
-    const reordered = nextTypes.filter(t => prevTypes.includes(t));
-    if (reordered.length === nextTypes.length) {
-      changes.push(`Reordered sections: ${nextTypes.join(' → ')}`);
-    }
-  }
-
-  // Theme change
-  if (prev.theme !== next.theme) {
-    changes.push(next.theme ? `Theme changed to "${next.theme}"` : 'Theme removed');
-  }
-
-  // Accent color change
-  if (prev.accentColor !== next.accentColor) {
-    changes.push(next.accentColor ? `Accent color changed to ${next.accentColor}` : 'Accent color removed');
-  }
-
-  // Business description change
-  if (prev.businessDescription !== next.businessDescription && next.businessDescription) {
-    changes.push(`Business description updated`);
-  }
-
-  return changes;
-}
-
-export function buildRegeneratePrompt(layout: PageLayout, changes: string[]): string {
-  const blockList = layout.blocks
-    .map((b, i) => describeBlock(b, i))
-    .join('\n');
-
+function describeLayout(layout: PageLayout): string {
+  const blockList = layout.blocks.map((b, i) => describeBlock(b, i)).join('\n');
   const extras: string[] = [];
 
   if (layout.theme) {
@@ -107,57 +47,31 @@ export function buildRegeneratePrompt(layout: PageLayout, changes: string[]): st
   if (layout.businessDescription) {
     extras.push(`Business: ${layout.businessDescription}`);
   }
-
-  const changeList = changes.map(c => `- ${c}`).join('\n');
-
-  return `The user updated their layout. Changes:
-${changeList}
-
-Updated layout:
-${blockList}
-${extras.length ? extras.map(e => `- ${e}`).join('\n') : ''}
-
-Steps:
-1. Call get_current_html() to get the existing page.
-2. Call get_layout() for the full details.
-3. Modify the existing HTML to match the changes above — do NOT rebuild from scratch.
-4. Call show_preview(html) with the updated HTML.
-
-Preserve the existing design. Only change what's needed.`;
-}
-
-export function buildGeneratePrompt(layout: PageLayout): string {
-  const blockList = layout.blocks
-    .map((b, i) => describeBlock(b, i))
-    .join('\n');
-
-  const extras: string[] = [];
-
-  if (layout.theme) {
-    const themeKey = layout.theme.toLowerCase();
-    const style = THEME_STYLES[themeKey];
-    if (style) {
-      extras.push(`Theme: ${layout.theme} — ${style}`);
-    } else {
-      extras.push(`Theme: ${layout.theme}`);
-    }
-  }
-  if (layout.accentColor) {
-    extras.push(`Accent color: ${layout.accentColor} — use for buttons, links, highlights, gradients`);
-  }
-  if (layout.businessDescription) {
-    extras.push(`Business: ${layout.businessDescription}`);
-  }
   if (layout.techStack?.length) {
     extras.push(`Tech stack: ${layout.techStack.join(', ')}`);
   }
 
-  const extrasSection = extras.length
-    ? `\n${extras.map(e => `- ${e}`).join('\n')}`
-    : '';
+  return extras.length ? `${blockList}\n${extras.map(e => `- ${e}`).join('\n')}` : blockList;
+}
+
+export function buildGeneratePrompt(layout: PageLayout, hasExistingPreview: boolean): string {
+  const layoutDesc = describeLayout(layout);
+
+  if (hasExistingPreview) {
+    return `Update the website to match this layout:
+${layoutDesc}
+
+Steps: get_current_html() → get_layout() → modify existing HTML → show_preview(html). Preserve the existing design — only change what's needed.`;
+  }
 
   return `Generate a website with these sections:
-${blockList}${extrasSection}
+${layoutDesc}
 
 Steps: get_layout() → generate HTML → show_preview(html). Go.`;
+}
+
+export function buildRevisionPrompt(feedback: string): string {
+  return `Revision: "${feedback}"
+
+Steps: get_current_html() → edit ONLY what was asked → show_preview(html). Do NOT rebuild from scratch.`;
 }
