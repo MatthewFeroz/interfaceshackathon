@@ -68,7 +68,7 @@ const MARKETING_LEVELS = [
     id: 'core', step: 1, label: 'Core Marketing',
     questions: [
       {
-        id: 'core-help', prompt: 'I help ________', type: 'tags', selectMode: 'multi',
+        id: 'core-help', prompt: 'I help …', type: 'tags', selectMode: 'multi',
         impact: 'Defines your target audience',
         tags: [
           { id: 'aud-entrepreneurs', label: 'Entrepreneurs' },
@@ -83,7 +83,7 @@ const MARKETING_LEVELS = [
         ],
       },
       {
-        id: 'core-achieve', prompt: 'Achieve ________', type: 'tags', selectMode: 'multi',
+        id: 'core-achieve', prompt: 'Achieve …', type: 'tags', selectMode: 'multi',
         impact: 'Key outcomes you deliver',
         tags: [
           { id: 'goal-save-time', label: 'Save time' },
@@ -98,12 +98,12 @@ const MARKETING_LEVELS = [
         ],
       },
       {
-        id: 'core-selling', prompt: 'By selling ________', type: 'tags', selectMode: 'single',
+        id: 'core-selling', prompt: 'By selling …', type: 'tags', selectMode: 'single',
         impact: 'Your product or service',
         tags: [{ id: 'custom-core-selling', label: 'Custom' }],
       },
       {
-        id: 'core-cta', prompt: 'I want visitors to ________', type: 'tags', selectMode: 'single',
+        id: 'core-cta', prompt: 'I want visitors to …', type: 'tags', selectMode: 'single',
         impact: 'Primary call-to-action',
         tags: [
           { id: 'cta-buy', label: 'Buy now' },
@@ -121,7 +121,7 @@ const MARKETING_LEVELS = [
     id: 'tone', step: 2, label: 'Tone & Brand',
     questions: [
       {
-        id: 'tone-brand', prompt: 'My brand feels ________', type: 'tags', selectMode: 'multi',
+        id: 'tone-brand', prompt: 'My brand feels …', type: 'tags', selectMode: 'multi',
         impact: 'Sets voice and visual style',
         tags: [
           { id: 'tone-bold', label: 'Bold' },
@@ -141,7 +141,7 @@ const MARKETING_LEVELS = [
     id: 'cred', step: 3, label: 'Credibility',
     questions: [
       {
-        id: 'cred-have', prompt: 'I have ________', type: 'tags', selectMode: 'multi',
+        id: 'cred-have', prompt: 'I have …', type: 'tags', selectMode: 'multi',
         impact: 'Builds trust with visitors', conditional: true,
         tags: [
           { id: 'cred-10years', label: '10+ years experience' },
@@ -160,7 +160,7 @@ const MARKETING_LEVELS = [
     id: 'urgency', step: 4, label: 'Urgency & Motivation',
     questions: [
       {
-        id: 'urgency-offer', prompt: 'My offer is ________', type: 'tags', selectMode: 'single',
+        id: 'urgency-offer', prompt: 'My offer is …', type: 'tags', selectMode: 'single',
         impact: 'Drives conversion urgency',
         tags: [
           { id: 'urg-limited', label: 'Limited time' },
@@ -257,13 +257,10 @@ const COMPONENT_GROUPS = [
 ]
 
 const TECH_STACKS = [
-  { id: 'react',      label: 'React' },
-  { id: 'nextjs',     label: 'Next.js' },
-  { id: 'vue',        label: 'Vue' },
-  { id: 'svelte',     label: 'Svelte' },
-  { id: 'html',       label: 'HTML/CSS' },
-  { id: 'tailwind',   label: 'Tailwind' },
-  { id: 'typescript', label: 'TypeScript' },
+  { id: 'html',    label: 'HTML/CSS' },
+  { id: 'react',   label: 'React' },
+  { id: 'nextjs',  label: 'Next.js' },
+  { id: 'vue',     label: 'Vue' },
 ]
 
 // Funnel themes — what the USER'S WEBSITE will look like
@@ -363,6 +360,15 @@ function DroppableSection({ id, children }) {
   )
 }
 
+function DroppableBriefCard({ id, children }) {
+  const { isOver, setNodeRef } = useDroppable({ id })
+  return (
+    <div ref={setNodeRef} className={`funnel-section ${isOver ? 'drag-over' : ''}`}>
+      {children}
+    </div>
+  )
+}
+
 // ─── Dropped block tags ───────────────────────────────────────────────────────
 
 function DroppedBlocks({ section, blocks, onRemove }) {
@@ -383,7 +389,7 @@ function DroppedBlocks({ section, blocks, onRemove }) {
 
 // ─── Image section ────────────────────────────────────────────────────────────
 
-function ImageSection({ images, onAddUrl, onUpload, onRemove }) {
+function ImageSection({ images, onAddUrl, onUpload, onRemove, showPreviews = true }) {
   const [urlInput, setUrlInput] = useState('')
   const fileRef = useRef()
 
@@ -428,7 +434,7 @@ function ImageSection({ images, onAddUrl, onUpload, onRemove }) {
         />
       </div>
 
-      {images.length > 0 && (
+      {showPreviews && images.length > 0 && (
         <div className="image-previews">
           {images.map((img, i) => (
             <div key={i} className="image-preview-item">
@@ -501,7 +507,7 @@ function QuestionBlock({ question, answer, onTagToggle }) {
 
 // ─── Level accordion (sidebar) ───────────────────────────────────────────────
 
-function LevelAccordion({ level, isExpanded, onToggle, answers, onTagToggle }) {
+function LevelAccordion({ level, isExpanded, onToggle, answers, onTagToggle, locked }) {
   const completionCount = level.questions.reduce((count, q) => {
     const a = answers[q.id]
     if (!a) return count
@@ -511,16 +517,17 @@ function LevelAccordion({ level, isExpanded, onToggle, answers, onTagToggle }) {
   }, 0)
 
   return (
-    <div className={`level-accordion ${isExpanded ? 'expanded' : ''}`}>
-      <button className="level-header" onClick={onToggle}>
+    <div className={`level-accordion ${isExpanded ? 'expanded' : ''} ${locked ? 'locked' : ''}`}>
+      <button className="level-header" onClick={locked ? undefined : onToggle} style={locked ? { opacity: 0.45, cursor: 'not-allowed' } : undefined}>
         <span className="level-step">{level.step}</span>
         <span className="level-label">{level.label}</span>
-        {completionCount > 0 && (
+        {locked && <span className="level-lock">Locked</span>}
+        {!locked && completionCount > 0 && (
           <span className="level-count">{completionCount}/{level.questions.length}</span>
         )}
-        <span className="level-chevron">{isExpanded ? 'v' : '>'}</span>
+        <span className="level-chevron">{locked ? '>' : isExpanded ? 'v' : '>'}</span>
       </button>
-      {isExpanded && (
+      {!locked && isExpanded && (
         <div className="level-body">
           {level.questions.map(q => (
             <QuestionBlock key={q.id} question={q} answer={answers[q.id]} onTagToggle={onTagToggle} />
@@ -545,7 +552,7 @@ function BriefQuestionSlot({ question, answer, onRemoveTag, onTextChange, onClea
   return (
     <div ref={setNodeRef} className={`brief-slot ${isOver ? 'drag-over' : ''}`}>
       <div className="brief-slot-header">
-        <div className="brief-slot-prompt">{question.prompt.replace('________', '...')}</div>
+        <div className="brief-slot-prompt">{question.prompt}</div>
         {hasContent && (
           <button className="brief-slot-clear" onClick={() => onClearQuestion(question.id)}>Clear</button>
         )}
@@ -633,7 +640,7 @@ export default function App() {
   const [activeBlock, setActiveBlock] = useState(null)
 
   // Funnel state
-  const [selectedTech,   setSelectedTech]   = useState([])
+  const [selectedTech,   setSelectedTech]   = useState('html')
   const [selectedTheme,  setSelectedTheme]  = useState('dark')
   const [accentColor,    setAccentColor]    = useState('#6366f1')
   const [customHex,      setCustomHex]      = useState('#6366f1')
@@ -670,6 +677,24 @@ export default function App() {
   // Terminal
   const terminalRef = useRef(null)
 
+  // ── Progressive unlock: each section requires the previous to have content ──
+  const levelHasContent = (level) => level.questions.some(q => {
+    const a = answers[q.id]
+    if (!a) return false
+    return (a.selectedTags || []).length > 0 || (a.freeText || '').trim() || (a.detailText || '').trim()
+  })
+
+  const sectionUnlocked = (() => {
+    const u = {}
+    // Marketing levels: core(0) always unlocked, each next needs previous complete
+    MARKETING_LEVELS.forEach((level, i) => {
+      u[level.id] = i === 0 ? true : levelHasContent(MARKETING_LEVELS[i - 1])
+    })
+    // Theme unlocks after last marketing level (urgency) is done
+    u['theme-colors'] = levelHasContent(MARKETING_LEVELS[MARKETING_LEVELS.length - 1])
+    return u
+  })()
+
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } })
   )
@@ -699,6 +724,14 @@ export default function App() {
       const dragSelectMode = active.data.current?.selectMode
       if (dragQuestionId !== targetQuestionId) return
       toggleTag(targetQuestionId, block.id, dragSelectMode)
+      return
+    }
+
+    // Handle drops onto Theme brief card
+    if (targetId === 'drop-theme-select') {
+      const dragQuestionId = active.data.current?.questionId
+      if (dragQuestionId !== 'theme-select') return
+      setSelectedTheme(block.id)
       return
     }
 
@@ -733,8 +766,7 @@ export default function App() {
     }))
   }
 
-  const toggleTech = id =>
-    setSelectedTech(prev => prev.includes(id) ? prev.filter(t => t !== id) : [...prev, id])
+  const toggleTech = id => setSelectedTech(id)
 
   // ── Marketing questionnaire helpers ──────────────────────────────────────
   const toggleTag = (questionId, tagId, selectMode) => {
@@ -805,13 +837,13 @@ export default function App() {
       }))
 
     const themeObj = FUNNEL_THEMES.find(t => t.id === selectedTheme)
-    const techLabels = TECH_STACKS.filter(t => selectedTech.includes(t.id)).map(t => t.label)
+    const techLabel = TECH_STACKS.find(t => t.id === selectedTech)?.label
 
     return {
       blocks,
       theme: themeObj?.label || selectedTheme,
       accentColor,
-      techStack: techLabels.length ? techLabels : undefined,
+      techStack: techLabel ? [techLabel] : undefined,
       businessDescription: productDetails || undefined,
     }
   }, [droppedBlocks, selectedTheme, accentColor, selectedTech, productDetails])
@@ -917,7 +949,7 @@ export default function App() {
   }
 
   const totalItems =
-    selectedTech.length +
+    (selectedTech ? 1 : 0) +
     (productDetails ? 1 : 0) +
     images.length +
     Object.values(droppedBlocks).flat().length +
@@ -980,8 +1012,127 @@ export default function App() {
                   onToggle={() => setExpandedLevel(prev => prev === level.id ? null : level.id)}
                   answers={answers}
                   onTagToggle={toggleTag}
+                  locked={!sectionUnlocked[level.id]}
                 />
               ))}
+
+              {/* ── Theme & Colors accordion (step 5, required) ── */}
+              <div className={`level-accordion ${expandedLevel === 'theme-colors' ? 'expanded' : ''} ${!sectionUnlocked['theme-colors'] ? 'locked' : ''}`}>
+                <button className="level-header" onClick={sectionUnlocked['theme-colors'] ? () => setExpandedLevel(prev => prev === 'theme-colors' ? null : 'theme-colors') : undefined} style={!sectionUnlocked['theme-colors'] ? { opacity: 0.45, cursor: 'not-allowed' } : undefined}>
+                  <span className="level-step">5</span>
+                  <span className="level-label">Theme & Colors</span>
+                  {!sectionUnlocked['theme-colors'] && <span className="level-lock">Locked</span>}
+                  <span className="level-chevron">{!sectionUnlocked['theme-colors'] ? '>' : expandedLevel === 'theme-colors' ? 'v' : '>'}</span>
+                </button>
+                {sectionUnlocked['theme-colors'] && expandedLevel === 'theme-colors' && (
+                  <div className="level-body">
+                    <div className="question-block">
+                      <div className="question-prompt">My site looks …</div>
+                      <div className="question-impact-hint">Sets your visual style</div>
+                      <div className="sidebar-tags">
+                        {FUNNEL_THEMES.map(theme => (
+                          <DraggableTag
+                            key={theme.id}
+                            tag={theme}
+                            selected={selectedTheme === theme.id}
+                            onToggle={() => setSelectedTheme(theme.id)}
+                            selectMode="single"
+                            questionId="theme-select"
+                          />
+                        ))}
+                      </div>
+                    </div>
+                    <div className="question-block">
+                      <div className="question-prompt">Accent color</div>
+                      <div className="color-row">
+                        {ACCENT_COLORS.map(c => (
+                          <div
+                            key={c}
+                            className={`color-swatch ${accentColor === c ? 'selected' : ''}`}
+                            style={{ background: c }}
+                            onClick={() => { setAccentColor(c); setCustomHex(c) }}
+                          />
+                        ))}
+                        <div className="color-input-wrapper">
+                          <input
+                            type="color"
+                            className="color-input"
+                            value={accentColor}
+                            onChange={e => { setAccentColor(e.target.value); setCustomHex(e.target.value) }}
+                          />
+                          <input
+                            className="custom-hex-input"
+                            value={customHex}
+                            onChange={e => {
+                              setCustomHex(e.target.value)
+                              if (/^#[0-9a-fA-F]{6}$/.test(e.target.value)) setAccentColor(e.target.value)
+                            }}
+                            placeholder="#6366f1"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* ── Optional section divider ── */}
+              <div className="sidebar-divider">
+                <span className="sidebar-divider-text">Optional</span>
+              </div>
+
+              {/* ── Tech Stack accordion (optional, always accessible) ── */}
+              <div className={`level-accordion ${expandedLevel === 'tech' ? 'expanded' : ''}`}>
+                <button className="level-header" onClick={() => setExpandedLevel(prev => prev === 'tech' ? null : 'tech')}>
+                  <span className="level-label">Tech Stack</span>
+                  {selectedTech && (
+                    <span className="level-count">{TECH_STACKS.find(t => t.id === selectedTech)?.label}</span>
+                  )}
+                  <span className="level-chevron">{expandedLevel === 'tech' ? 'v' : '>'}</span>
+                </button>
+                {expandedLevel === 'tech' && (
+                  <div className="level-body">
+                    <div className="question-block">
+                      <div className="question-prompt">Build with …</div>
+                      <div className="question-impact-hint">Defaults to HTML/CSS</div>
+                      <div className="sidebar-tags">
+                        {TECH_STACKS.map(tech => (
+                          <DraggableTag
+                            key={tech.id}
+                            tag={tech}
+                            selected={selectedTech === tech.id}
+                            onToggle={() => toggleTech(tech.id)}
+                            selectMode="single"
+                            questionId="tech-stack"
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* ── Images accordion (optional, always accessible) ── */}
+              <div className={`level-accordion ${expandedLevel === 'images' ? 'expanded' : ''}`}>
+                <button className="level-header" onClick={() => setExpandedLevel(prev => prev === 'images' ? null : 'images')}>
+                  <span className="level-label">Images</span>
+                  {images.length > 0 && (
+                    <span className="level-count">{images.length}</span>
+                  )}
+                  <span className="level-chevron">{expandedLevel === 'images' ? 'v' : '>'}</span>
+                </button>
+                {expandedLevel === 'images' && (
+                  <div className="level-body">
+                    <ImageSection
+                      images={images}
+                      onAddUrl={addImageUrl}
+                      onUpload={addImageFile}
+                      onRemove={removeImage}
+                      showPreviews={false}
+                    />
+                  </div>
+                )}
+              </div>
             </div>
           </aside>
 
@@ -994,126 +1145,49 @@ export default function App() {
               </p>
 
               {/* ── Marketing Brief (one card per level, progressive unlock) ── */}
-              {MARKETING_LEVELS.map((level, i) => {
-                const prevLevel = i > 1 ? MARKETING_LEVELS[i - 1] : null
-                const prevHasContent = prevLevel
-                  ? prevLevel.questions.some(q => {
-                      const a = answers[q.id]
-                      if (!a) return false
-                      return (a.selectedTags || []).length > 0 || (a.freeText || '').trim() || (a.detailText || '').trim()
-                    })
-                  : true
-                const locked = i >= 2 && !prevHasContent
-                return (
-                  <MarketingBriefCard
-                    key={level.id} level={level} answers={answers}
-                    onRemoveTag={removeTagFromBrief} onTextChange={setQuestionText}
-                    onClearQuestion={clearQuestion} locked={locked}
-                  />
-                )
-              })}
+              {MARKETING_LEVELS.map((level) => (
+                <MarketingBriefCard
+                  key={level.id} level={level} answers={answers}
+                  onRemoveTag={removeTagFromBrief} onTextChange={setQuestionText}
+                  onClearQuestion={clearQuestion} locked={!sectionUnlocked[level.id]}
+                />
+              ))}
 
-              {/* ── 1: Tech Stack ── */}
-              <DroppableSection id="tech">
-                <div className="funnel-section-header">
-                  <div className="funnel-section-info">
-                    <div className="funnel-section-title">Tech Stack</div>
+              {/* ── Theme & Colors brief card (step 5) ── */}
+              {sectionUnlocked['theme-colors'] ? (
+                <DroppableBriefCard id="drop-theme-select">
+                  <div className="funnel-section-header">
+                    <div className="funnel-section-info">
+                      <div className="funnel-section-title">Theme & Colors</div>
+                      <div className="funnel-section-subtitle">Drag from sidebar or click</div>
+                    </div>
+                    <div className="funnel-section-step">5</div>
                   </div>
-                  <div className="funnel-section-step">1</div>
-                </div>
-                <div className="funnel-section-body">
-                  <div className="tech-grid">
-                    {TECH_STACKS.map(tech => (
-                      <button
-                        key={tech.id}
-                        className={`tech-pill ${selectedTech.includes(tech.id) ? 'selected' : ''}`}
-                        onClick={() => toggleTech(tech.id)}
-                      >
-                        {tech.label}
-                      </button>
-                    ))}
-                  </div>
-                  <DroppedBlocks section="tech" blocks={droppedBlocks.tech} onRemove={removeDroppedBlock} />
-                </div>
-              </DroppableSection>
-
-              {/* ── 2: Theme ── */}
-              <DroppableSection id="theme">
-                <div className="funnel-section-header">
-                  <div className="funnel-section-info">
-                    <div className="funnel-section-title">Theme & Colors</div>
-                  </div>
-                  <div className="funnel-section-step">2</div>
-                </div>
-                <div className="funnel-section-body">
-                  <div className="theme-options">
-                    {FUNNEL_THEMES.map(theme => (
-                      <div
-                        key={theme.id}
-                        className={`theme-card ${selectedTheme === theme.id ? 'selected' : ''}`}
-                        onClick={() => setSelectedTheme(theme.id)}
-                      >
-                        <div className="theme-preview" style={{ background: theme.bg }}>
-                          <div className="theme-preview-bar" style={{ background: theme.bar }} />
-                          <div className="theme-preview-line" style={{ background: theme.text }} />
-                          <div className="theme-preview-line" style={{ background: theme.text }} />
-                        </div>
-                        <div className="theme-name">{theme.label}</div>
-                      </div>
-                    ))}
-                  </div>
-
-                  <div className="color-row">
-                    <span className="color-label">Accent color</span>
-                    {ACCENT_COLORS.map(c => (
-                      <div
-                        key={c}
-                        className={`color-swatch ${accentColor === c ? 'selected' : ''}`}
-                        style={{ background: c }}
-                        onClick={() => { setAccentColor(c); setCustomHex(c) }}
-                      />
-                    ))}
-                    <div className="color-input-wrapper">
-                      <input
-                        type="color"
-                        className="color-input"
-                        value={accentColor}
-                        onChange={e => { setAccentColor(e.target.value); setCustomHex(e.target.value) }}
-                      />
-                      <input
-                        className="custom-hex-input"
-                        value={customHex}
-                        onChange={e => {
-                          setCustomHex(e.target.value)
-                          if (/^#[0-9a-fA-F]{6}$/.test(e.target.value)) setAccentColor(e.target.value)
-                        }}
-                        placeholder="#6366f1"
-                      />
+                  <div className="funnel-section-body">
+                    <div className="brief-slot-tags">
+                      <span className="brief-slot-tag">
+                        <span>{FUNNEL_THEMES.find(t => t.id === selectedTheme)?.label || selectedTheme}</span>
+                      </span>
+                      <span className="brief-slot-tag" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <div style={{ width: 14, height: 14, borderRadius: '50%', background: accentColor, border: '1px solid rgba(255,255,255,0.2)', flexShrink: 0 }} />
+                        <span>{accentColor}</span>
+                      </span>
                     </div>
                   </div>
-
-                  <DroppedBlocks section="theme" blocks={droppedBlocks.theme} onRemove={removeDroppedBlock} />
-                </div>
-              </DroppableSection>
-
-              {/* ── 3: Images ── */}
-              <DroppableSection id="images">
-                <div className="funnel-section-header">
-                  <div className="funnel-section-info">
-                    <div className="funnel-section-title">Images</div>
+                </DroppableBriefCard>
+              ) : (
+                <div className="funnel-section marketing-brief-locked">
+                  <div className="funnel-section-header">
+                    <div className="funnel-section-info">
+                      <div className="funnel-section-title">Theme & Colors</div>
+                    </div>
+                    <div className="funnel-section-step">5</div>
                   </div>
-                  <div className="funnel-section-step">3</div>
+                  <div className="funnel-section-body">
+                    <div className="brief-slot-empty">Complete the sections above to unlock</div>
+                  </div>
                 </div>
-                <div className="funnel-section-body">
-                  <ImageSection
-                    images={images}
-                    onAddUrl={addImageUrl}
-                    onUpload={addImageFile}
-                    onRemove={removeImage}
-                  />
-                  <DroppedBlocks section="images" blocks={droppedBlocks.images} onRemove={removeDroppedBlock} />
-                </div>
-              </DroppableSection>
+              )}
 
             </div>
           </main>
