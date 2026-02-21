@@ -57,12 +57,12 @@ export function setupUiWs(server: Server): WebSocketServer {
       aliveMap.set(ws, true);
     });
 
-    // Send current state on connect
+    // Send current state on connect (live version includes editor script)
     ws.send(JSON.stringify({
       type: 'init',
       payload: {
         layout: store.getLayout(),
-        previewHtml: store.getPreviewHtml(),
+        previewHtml: store.getPreviewHtmlLive(),
         status: store.getStatus(),
       },
     }));

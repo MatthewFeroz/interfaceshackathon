@@ -32,10 +32,16 @@ function describeBlock(block: Block, index: number): string {
   return `${index + 1}. **${block.type}** — ${hint}`;
 }
 
-export function buildRevisionPrompt(feedback: string): string {
+export function buildRevisionPrompt(feedback: string, section?: string): string {
+  const scope = section
+    ? `Revise ONLY the section with data-block-id="${section}". Do NOT change any other section.`
+    : 'Revise the HTML as requested.';
+
   return `Revision request: "${feedback}"
 
-Call get_layout() for any layout changes, revise the HTML, then call show_preview(html). Be concise — just make the change and show the result.`;
+${scope}
+
+Call get_layout() for any layout changes, then revise the HTML and call show_preview(html). Be concise — just make the change and show the result.`;
 }
 
 export function diffLayouts(prev: PageLayout, next: PageLayout): string[] {
