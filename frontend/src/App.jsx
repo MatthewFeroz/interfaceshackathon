@@ -324,10 +324,45 @@ const ACCENT_COLORS = [
 
 // App-level UI themes (affects the Akita app itself)
 const APP_THEMES = [
+  { id: 'akita', label: 'Akita' },
   { id: 'dark',  label: 'Dark' },
   { id: 'light', label: 'Light' },
   { id: 'vapor', label: 'Vapor' },
 ]
+
+// ─── Dog Mascot SVG (akita theme) ─────────────────────────────────────────
+function DogMascot({ size = 44 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 100 100" className="dog-mascot" aria-label="Akita dog mascot">
+      {/* Body */}
+      <ellipse cx="50" cy="62" rx="28" ry="24" fill="#F4A460" stroke="#3B2314" strokeWidth="3"/>
+      {/* Head */}
+      <circle cx="50" cy="35" r="20" fill="#F4A460" stroke="#3B2314" strokeWidth="3"/>
+      {/* Left ear */}
+      <path d="M32 22 L26 6 L40 18 Z" fill="#D2691E" stroke="#3B2314" strokeWidth="2.5" strokeLinejoin="round"/>
+      {/* Right ear */}
+      <path d="M68 22 L74 6 L60 18 Z" fill="#D2691E" stroke="#3B2314" strokeWidth="2.5" strokeLinejoin="round"/>
+      {/* Eyes */}
+      <circle cx="42" cy="32" r="3.5" fill="#3B2314"/>
+      <circle cx="58" cy="32" r="3.5" fill="#3B2314"/>
+      <circle cx="43" cy="31" r="1.2" fill="#fff"/>
+      <circle cx="59" cy="31" r="1.2" fill="#fff"/>
+      {/* Nose */}
+      <ellipse cx="50" cy="40" rx="4" ry="3" fill="#3B2314"/>
+      {/* Mouth */}
+      <path d="M46 43 Q50 47 54 43" fill="none" stroke="#3B2314" strokeWidth="1.5" strokeLinecap="round"/>
+      {/* Tongue */}
+      <ellipse cx="50" cy="47" rx="3" ry="4" fill="#FF6B6B" stroke="#3B2314" strokeWidth="1"/>
+      {/* Belly */}
+      <ellipse cx="50" cy="68" rx="16" ry="14" fill="#FFECD2"/>
+      {/* Tail */}
+      <path className="dog-tail" d="M78 55 Q88 40 82 30" fill="none" stroke="#D2691E" strokeWidth="5" strokeLinecap="round"/>
+      {/* Paws */}
+      <ellipse cx="34" cy="84" rx="7" ry="5" fill="#F4A460" stroke="#3B2314" strokeWidth="2"/>
+      <ellipse cx="66" cy="84" rx="7" ry="5" fill="#F4A460" stroke="#3B2314" strokeWidth="2"/>
+    </svg>
+  )
+}
 
 // ─── Draggable block in sidebar ──────────────────────────────────────────────
 
@@ -677,6 +712,11 @@ export default function App() {
   // Terminal
   const terminalRef = useRef(null)
 
+  // ── Update document title based on theme ──
+  useEffect(() => {
+    document.title = appTheme === 'akita' ? 'Akita — PawBuilder' : 'Akita — Prompt Builder'
+  }, [appTheme])
+
   // ── Progressive unlock: each section requires the previous to have content ──
   const levelHasContent = (level) => level.questions.some(q => {
     const a = answers[q.id]
@@ -827,8 +867,53 @@ export default function App() {
 
   // ── Build PageLayout JSON for the backend (/api/state/layout) ───────────────
   const buildPageLayout = useCallback(() => {
+    const themeObj = FUNNEL_THEMES.find(t => t.id === selectedTheme)
+    const techLabel = TECH_STACKS.find(t => t.id === selectedTech)?.label
+
+    // Build a business description from marketing answers
+    const parts = []
+    const resolve = (qId) => {
+      const a = answers[qId]
+      if (!a) return []
+      const level = MARKETING_LEVELS.find(l => l.questions.some(q => q.id === qId))
+      const question = level?.questions.find(q => q.id === qId)
+      if (!question) return []
+      return (a.selectedTags || []).map(tid => {
+        if (tid.startsWith('custom-')) return a.freeText || ''
+        return question.tags.find(t => t.id === tid)?.label || ''
+      }).filter(Boolean)
+    }
+
+    const audience = resolve('core-help')
+    if (audience.length) parts.push(`I help ${audience.join(', ')}`)
+    const goals = resolve('core-achieve')
+    if (goals.length) parts.push(`achieve ${goals.join(', ')}`)
+    const selling = resolve('core-selling')
+    if (selling.length) parts.push(`by selling ${selling.join(', ')}`)
+    const cta = resolve('core-cta')
+    if (cta.length) parts.push(`CTA: ${cta.join(', ')}`)
+    const tone = resolve('tone-brand')
+    if (tone.length) parts.push(`Brand tone: ${tone.join(', ')}`)
+    const cred = resolve('cred-have')
+    const credDetail = answers['cred-have']?.detailText?.trim()
+    if (cred.length) parts.push(`Credibility: ${cred.join(', ')}${credDetail ? ` (${credDetail})` : ''}`)
+    const urgency = resolve('urgency-offer')
+    if (urgency.length) parts.push(`Offer type: ${urgency.join(', ')}`)
+
+    // Build blocks from marketing answers + dropped blocks
+    const marketingBlocks = MARKETING_LEVELS
+      .filter(level => level.questions.some(q => {
+        const a = answers[q.id]
+        return a && ((a.selectedTags || []).length > 0 || (a.freeText || '').trim())
+      }))
+      .map(level => ({
+        id: level.id,
+        type: level.id,
+        props: {},
+      }))
+
     let counter = 0
-    const blocks = Object.values(droppedBlocks)
+    const droppedBlocksList = Object.values(droppedBlocks)
       .flat()
       .map(b => ({
         id: `${b.id}-${++counter}`,
@@ -836,17 +921,18 @@ export default function App() {
         props: {},
       }))
 
-    const themeObj = FUNNEL_THEMES.find(t => t.id === selectedTheme)
-    const techLabel = TECH_STACKS.find(t => t.id === selectedTech)?.label
+    const allBlocks = [...marketingBlocks, ...droppedBlocksList]
+
+    const description = [parts.join('. '), productDetails].filter(Boolean).join('. ')
 
     return {
-      blocks,
+      blocks: allBlocks.length ? allBlocks : [{ id: 'placeholder', type: 'hero', props: {} }],
       theme: themeObj?.label || selectedTheme,
       accentColor,
       techStack: techLabel ? [techLabel] : undefined,
-      businessDescription: productDetails || undefined,
+      businessDescription: description || undefined,
     }
-  }, [droppedBlocks, selectedTheme, accentColor, selectedTech, productDetails])
+  }, [droppedBlocks, selectedTheme, accentColor, selectedTech, productDetails, answers])
 
   // ── Sync layout to backend (debounced) ──────────────────────────────────────
   useEffect(() => {
@@ -966,8 +1052,10 @@ export default function App() {
         {/* ── Header ── */}
         <header className="header">
           <div className="header-brand">
+            {appTheme === 'akita' && <DogMascot size={44} />}
             <div>
               <div className="header-title">akita</div>
+              {appTheme === 'akita' && <div className="header-subtitle">The goofiest page builder ever</div>}
             </div>
           </div>
 
@@ -1214,8 +1302,8 @@ export default function App() {
                 />
               ) : (
                 <div className="preview-empty">
-                  <div className="preview-empty-text">Preview will appear here</div>
-                  <div className="preview-empty-hint">Drop blocks and click Generate</div>
+                  <div className="preview-empty-text">{appTheme === 'akita' ? '\u{1F3E1} Drop a module into the yard!' : 'Preview will appear here'}</div>
+                  <div className="preview-empty-hint">{appTheme === 'akita' ? 'Then click Fetch It Live!' : 'Drop blocks and click Generate'}</div>
                 </div>
               )}
 
@@ -1248,9 +1336,11 @@ export default function App() {
         {/* ── Bottom Bar ── */}
         <div className="bottom-bar">
           <div className="bottom-status">
-            {totalItems > 0
-              ? `${totalItems} selected`
-              : 'Ready when you are'}
+            {appTheme === 'akita'
+              ? '\u{1F43E} GOOD BOI MODE: ON \u{1F43E}'
+              : totalItems > 0
+                ? `${totalItems} selected`
+                : 'Ready when you are'}
           </div>
           <div className="bottom-actions">
             <button
@@ -1260,7 +1350,7 @@ export default function App() {
             >
               {loading
                 ? <><div className="spinner" /> Generating…</>
-                : 'Generate'}
+                : appTheme === 'akita' ? '\u{1F43E} Fetch It Live!' : 'Generate'}
             </button>
           </div>
         </div>

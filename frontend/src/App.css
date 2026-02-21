@@ -375,20 +375,20 @@
 .funnel-section-info { flex: 1; }
 
 .funnel-section-title {
-  font-size: 13px;
+  font-size: 17px;
   font-weight: 600;
   color: var(--text-primary);
   letter-spacing: 0.01em;
 }
 
 .funnel-section-subtitle {
-  font-size: 11px;
+  font-size: 13px;
   color: var(--text-muted);
   margin-top: 1px;
 }
 
 .funnel-section-step {
-  font-size: 11px;
+  font-size: 13px;
   font-weight: 600;
   color: var(--accent);
   background: var(--accent-faint);
@@ -1416,12 +1416,12 @@
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  padding: 4px 10px;
+  padding: 6px 12px;
   border-radius: 6px;
   border: 1px solid var(--border);
   background: var(--bg-secondary);
   color: var(--text-secondary);
-  font-size: 12px;
+  font-size: 14px;
   cursor: grab;
   transition: all 0.15s;
   user-select: none;
@@ -1434,10 +1434,10 @@
 
 /* Question block */
 .question-block { margin-bottom: 10px; }
-.question-prompt { font-size: 12px; font-weight: 600; color: var(--text-primary); margin-bottom: 2px; }
-.question-impact-hint { font-size: 10px; color: var(--text-muted); margin-bottom: 4px; }
+.question-prompt { font-size: 14px; font-weight: 600; color: var(--text-primary); margin-bottom: 2px; }
+.question-impact-hint { font-size: 12px; color: var(--text-muted); margin-bottom: 4px; }
 .question-conditional-info {
-  font-size: 11px; color: var(--text-muted); padding: 6px 8px;
+  font-size: 13px; color: var(--text-muted); padding: 6px 8px;
   background: var(--bg-tertiary); border-radius: 6px; margin-top: 6px;
 }
 
@@ -1446,19 +1446,19 @@
 .level-header {
   display: flex; align-items: center; gap: 8px; width: 100%;
   padding: 10px 12px; background: none; border: none;
-  color: var(--text-primary); font-size: 13px; cursor: pointer;
+  color: var(--text-primary); font-size: 15px; cursor: pointer;
   text-align: left; transition: background 0.15s;
 }
 .level-header:hover { background: var(--bg-tertiary); }
 .level-step {
   width: 20px; height: 20px; border-radius: 50%;
   background: var(--bg-tertiary); display: flex; align-items: center;
-  justify-content: center; font-size: 10px; font-weight: 700; flex-shrink: 0;
+  justify-content: center; font-size: 12px; font-weight: 700; flex-shrink: 0;
 }
 .level-label { flex: 1; font-weight: 600; }
-.level-count { font-size: 10px; color: var(--accent); font-weight: 600; }
-.level-lock { font-size: 9px; color: var(--text-muted); opacity: 0.7; margin-left: auto; }
-.level-chevron { font-size: 10px; color: var(--text-muted); }
+.level-count { font-size: 12px; color: var(--accent); font-weight: 600; }
+.level-lock { font-size: 11px; color: var(--text-muted); opacity: 0.7; margin-left: auto; }
+.level-chevron { font-size: 12px; color: var(--text-muted); }
 .level-body { padding: 4px 12px 12px; }
 
 /* Sidebar optional divider */
@@ -1467,7 +1467,7 @@
   padding: 10px 12px 4px; margin-top: 4px;
 }
 .sidebar-divider-text {
-  font-size: 10px; font-weight: 600; text-transform: uppercase;
+  font-size: 12px; font-weight: 600; text-transform: uppercase;
   letter-spacing: 0.05em; color: var(--text-muted); white-space: nowrap;
 }
 .sidebar-divider::after {
@@ -1484,20 +1484,20 @@
 }
 .brief-slot.drag-over { border-color: var(--accent); background: rgba(99,102,241,0.05); }
 .brief-slot-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2px; }
-.brief-slot-prompt { font-size: 11px; font-weight: 600; color: var(--text-secondary); }
-.brief-slot-impact { font-size: 10px; color: var(--text-muted); margin-bottom: 6px; }
-.brief-slot-empty { font-size: 11px; color: var(--text-muted); font-style: italic; }
+.brief-slot-prompt { font-size: 15px; font-weight: 600; color: var(--text-secondary); }
+.brief-slot-impact { font-size: 13px; color: var(--text-muted); margin-bottom: 6px; }
+.brief-slot-empty { font-size: 14px; color: var(--text-muted); font-style: italic; }
 .brief-slot-clear {
   background: none; border: none; color: var(--text-muted);
-  font-size: 10px; cursor: pointer; padding: 1px 6px; border-radius: 4px;
+  font-size: 12px; cursor: pointer; padding: 1px 6px; border-radius: 4px;
   transition: all 0.15s;
 }
 .brief-slot-clear:hover { color: #f43f5e; background: rgba(244,63,94,0.1); }
 .brief-slot-tags { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 6px; }
 .brief-slot-tag {
   display: inline-flex; align-items: center; gap: 4px;
-  padding: 2px 8px; border-radius: 4px;
-  background: var(--accent); color: #fff; font-size: 11px;
+  padding: 4px 10px; border-radius: 4px;
+  background: var(--accent); color: #fff; font-size: 14px;
 }
 .brief-slot-tag-remove {
   background: none; border: none; color: rgba(255,255,255,0.7);
@@ -1507,6 +1507,316 @@
 .brief-slot-text-input {
   width: 100%; padding: 6px 8px; border-radius: 6px;
   border: 1px solid var(--border); background: var(--bg-primary);
-  color: var(--text-primary); font-size: 12px; margin-top: 4px;
+  color: var(--text-primary); font-size: 14px; margin-top: 4px;
 }
 .brief-slot-text-input:focus { outline: none; border-color: var(--accent); }
+
+/* ── Akita (PawBuilder) Theme ──────────────────────────────────────────── */
+
+.app[data-theme="akita"] {
+  --bg-primary:    #FFF8E7;
+  --bg-secondary:  #FFF3D6;
+  --bg-tertiary:   #FAEBD7;
+  --border:        #3B2314;
+  --text-primary:  #3B2314;
+  --text-secondary:#7A3B1E;
+  --text-muted:    #9B7352;
+  --accent:        #FF6B35;
+  --accent-alt:    #FFD700;
+  --accent-faint:  rgba(255,107,53,0.08);
+  --accent-dim:    #FFF3D6;
+  --gradient:      linear-gradient(135deg, #FF6B35, #FFD700);
+  --shadow:        3px 3px 0 #3B2314;
+  --radius:        14px;
+  --radius-lg:     18px;
+  --focus-ring:    0 0 0 3px #FFD700;
+  --block-accent:  #FF6B35;
+  --sidebar-tint:  rgba(255,107,53,0.06);
+  font-family: 'Nunito', 'IBM Plex Sans', sans-serif;
+}
+
+/* Akita: font overrides */
+.app[data-theme="akita"] .header-title,
+.app[data-theme="akita"] .sidebar-title,
+.app[data-theme="akita"] .funnel-title,
+.app[data-theme="akita"] .funnel-section-title,
+.app[data-theme="akita"] .level-label,
+.app[data-theme="akita"] .question-prompt,
+.app[data-theme="akita"] .brief-slot-prompt,
+.app[data-theme="akita"] .btn-generate,
+.app[data-theme="akita"] .theme-switch-btn {
+  font-family: 'Fredoka One', cursive;
+}
+
+/* Akita: header subtitle */
+.header-subtitle {
+  display: none;
+}
+.app[data-theme="akita"] .header-subtitle {
+  display: block;
+  font-size: 11px;
+  color: #FFECD2;
+  font-family: 'Nunito', sans-serif;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  margin-top: -2px;
+}
+
+/* Akita: header — orange with diagonal stripes */
+.app[data-theme="akita"] .header {
+  background: #FF6B35;
+  border-bottom: 3px solid #3B2314;
+  background-image: repeating-linear-gradient(
+    -45deg,
+    transparent,
+    transparent 10px,
+    rgba(255,255,255,0.06) 10px,
+    rgba(255,255,255,0.06) 20px
+  );
+}
+
+.app[data-theme="akita"] .header-title {
+  color: #FFF8E7;
+  font-size: 22px;
+  letter-spacing: 0.02em;
+  text-shadow: 2px 2px 0 #3B2314;
+}
+
+.app[data-theme="akita"] .header-controls .sound-toggle {
+  border-color: rgba(255,255,255,0.3);
+  color: #FFF8E7;
+}
+.app[data-theme="akita"] .header-controls .sound-toggle:hover {
+  background: rgba(255,255,255,0.15);
+}
+
+.app[data-theme="akita"] .theme-switcher {
+  border-color: rgba(255,255,255,0.3);
+}
+.app[data-theme="akita"] .theme-switch-btn {
+  color: rgba(255,255,255,0.7);
+  border-right-color: rgba(255,255,255,0.2);
+}
+.app[data-theme="akita"] .theme-switch-btn:hover {
+  color: #fff;
+  background: rgba(255,255,255,0.15);
+}
+.app[data-theme="akita"] .theme-switch-btn.active {
+  background: rgba(255,255,255,0.2);
+  color: #fff;
+}
+
+/* Akita: sidebar */
+.app[data-theme="akita"] .sidebar {
+  border-right: 3px solid #3B2314;
+}
+.app[data-theme="akita"] .sidebar-header {
+  border-bottom: 3px solid #3B2314;
+}
+
+/* Akita: all cards/panels — chunky borders + flat shadow */
+.app[data-theme="akita"] .funnel-section {
+  border: 3px solid #3B2314;
+  box-shadow: 3px 3px 0 #3B2314;
+  border-radius: 18px;
+}
+
+/* Akita: content area — polka dot background */
+.app[data-theme="akita"] .content-area {
+  background-image: radial-gradient(circle, rgba(59,35,20,0.04) 1.5px, transparent 1.5px);
+  background-size: 28px 28px;
+}
+
+/* Akita: buttons — bubbly */
+.app[data-theme="akita"] .btn-generate {
+  border: 3px solid #3B2314;
+  box-shadow: 3px 3px 0 #3B2314;
+  border-radius: 30px;
+  font-size: 16px;
+  padding: 12px 28px;
+  transition: all 0.15s ease;
+}
+.app[data-theme="akita"] .btn-generate:hover {
+  box-shadow: 1px 1px 0 #3B2314;
+  transform: translate(2px, 2px);
+}
+.app[data-theme="akita"] .btn-generate:active {
+  box-shadow: 0 0 0 #3B2314;
+  transform: translate(3px, 3px);
+}
+
+/* Akita: bottom bar */
+.app[data-theme="akita"] .bottom-bar {
+  background: #3B2314;
+  border-top: 3px solid #3B2314;
+}
+.app[data-theme="akita"] .bottom-status {
+  color: #FFD700;
+  font-family: 'Fredoka One', cursive;
+  font-size: 14px;
+  letter-spacing: 0.03em;
+}
+
+/* Akita: inputs — white bg, chunky border */
+.app[data-theme="akita"] .revision-input,
+.app[data-theme="akita"] .brief-slot-text-input,
+.app[data-theme="akita"] .image-url-field,
+.app[data-theme="akita"] .custom-hex-input,
+.app[data-theme="akita"] .product-textarea {
+  background: #fff;
+  border: 2px solid #3B2314;
+  box-shadow: 2px 2px 0 #3B2314;
+  border-radius: 12px;
+}
+
+/* Akita: sidebar tags — bubbly */
+.app[data-theme="akita"] .sidebar-tag {
+  border: 2px solid #3B2314;
+  box-shadow: 2px 2px 0 #3B2314;
+  border-radius: 20px;
+  font-family: 'Nunito', sans-serif;
+  font-weight: 700;
+  transition: all 0.15s ease;
+}
+.app[data-theme="akita"] .sidebar-tag:hover {
+  transform: translate(1px, 1px);
+  box-shadow: 1px 1px 0 #3B2314;
+}
+.app[data-theme="akita"] .sidebar-tag.selected {
+  background: #FF6B35;
+  border-color: #3B2314;
+  box-shadow: 2px 2px 0 #3B2314;
+}
+
+/* Akita: brief slot tags */
+.app[data-theme="akita"] .brief-slot-tag {
+  border: 2px solid #3B2314;
+  border-radius: 16px;
+  box-shadow: 2px 2px 0 #3B2314;
+}
+
+/* Akita: dropped blocks */
+.app[data-theme="akita"] .dropped-block {
+  border: 2px solid #3B2314;
+  border-radius: 20px;
+  box-shadow: 2px 2px 0 #3B2314;
+}
+
+/* Akita: level accordion */
+.app[data-theme="akita"] .level-accordion {
+  border-bottom: 2px solid #3B2314;
+}
+.app[data-theme="akita"] .level-step {
+  background: #FFD700;
+  color: #3B2314;
+  border: 2px solid #3B2314;
+  font-family: 'Fredoka One', cursive;
+}
+
+/* Akita: funnel section step badge */
+.app[data-theme="akita"] .funnel-section-step {
+  background: #FFD700;
+  color: #3B2314;
+  border: 2px solid #3B2314;
+  font-family: 'Fredoka One', cursive;
+}
+
+/* Akita: funnel section header */
+.app[data-theme="akita"] .funnel-section-header {
+  border-bottom: 2px solid #3B2314;
+}
+
+/* Akita: brief slot dashes become solid chunky */
+.app[data-theme="akita"] .brief-slot {
+  border: 2px dashed #7A3B1E;
+  border-radius: 14px;
+}
+.app[data-theme="akita"] .brief-slot.drag-over {
+  border-color: #FF6B35;
+  border-style: solid;
+  background: rgba(255,107,53,0.08);
+}
+
+/* Akita: toast */
+.app[data-theme="akita"] .toast {
+  border: 3px solid #3B2314;
+  box-shadow: 3px 3px 0 #3B2314;
+  border-radius: 20px;
+  background: #FFF8E7;
+  color: #3B2314;
+  font-family: 'Fredoka One', cursive;
+}
+
+/* Akita: revise button */
+.app[data-theme="akita"] .btn-revise {
+  border: 2px solid #3B2314;
+  box-shadow: 2px 2px 0 #3B2314;
+  border-radius: 16px;
+  font-family: 'Fredoka One', cursive;
+}
+
+/* Akita: preview panel */
+.app[data-theme="akita"] .preview-panel {
+  border-bottom: 3px solid #3B2314;
+}
+.app[data-theme="akita"] .preview-toggle {
+  border: 2px solid #3B2314;
+  box-shadow: 2px 2px 0 #3B2314;
+  border-radius: 10px;
+}
+
+/* Akita: drag overlay */
+.app[data-theme="akita"] .drag-overlay-item {
+  border: 3px solid #3B2314;
+  box-shadow: 3px 3px 0 #3B2314;
+  border-radius: 20px;
+  background: #FFF8E7;
+  color: #FF6B35;
+  font-family: 'Fredoka One', cursive;
+}
+
+/* Akita: right panel border */
+.app[data-theme="akita"] .right-panel {
+  border-left: 3px solid #3B2314;
+}
+
+/* Akita: revision bar */
+.app[data-theme="akita"] .revision-bar {
+  border-top: 2px solid #3B2314;
+  background: #FAEBD7;
+}
+
+/* ── Dog Mascot ─────────────────────────────────────────────────────────── */
+
+.dog-mascot {
+  flex-shrink: 0;
+  animation: bounce-soft 2s ease-in-out infinite;
+}
+
+.dog-tail {
+  transform-origin: 78px 55px;
+  animation: wag 0.4s ease-in-out infinite alternate;
+}
+
+/* ── Akita Keyframe Animations ──────────────────────────────────────────── */
+
+@keyframes wag {
+  0%   { transform: rotate(-15deg); }
+  100% { transform: rotate(15deg); }
+}
+
+@keyframes bounce-soft {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-4px); }
+}
+
+@keyframes wiggle {
+  0%, 100% { transform: rotate(0deg); }
+  25%      { transform: rotate(-3deg); }
+  75%      { transform: rotate(3deg); }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-8px); }
+}
