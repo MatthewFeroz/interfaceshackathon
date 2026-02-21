@@ -14,16 +14,44 @@ export function setupUiWs(server: Server): WebSocketServer {
     }
   };
 
-  store.on('preview:updated', (html: string) => {
-    broadcast({ type: 'preview:updated', payload: { html } });
+  store.on('preview:updated', (html: string, version: number) => {
+    broadcast({ type: 'preview:updated', payload: { html, version } });
   });
 
   store.on('status:changed', (status: string) => {
     broadcast({ type: 'status', payload: { status } });
   });
 
+  store.on('progress', (message: string) => {
+    broadcast({ type: 'progress', payload: { message } });
+  });
+
+  // Heartbeat: ping every 30s, terminate if no pong within 10s
+  const PING_INTERVAL = 30_000;
+  const PONG_TIMEOUT = 10_000;
+  const aliveMap = new Map<WebSocket, boolean>();
+
+  const heartbeat = setInterval(() => {
+    for (const ws of wss.clients) {
+      if (!aliveMap.get(ws)) {
+        console.log('[ws/ui] Client unresponsive, terminating');
+        ws.terminate();
+        continue;
+      }
+      aliveMap.set(ws, false);
+      ws.ping();
+    }
+  }, PING_INTERVAL);
+
+  wss.on('close', () => clearInterval(heartbeat));
+
   wss.on('connection', (ws: WebSocket) => {
     console.log('[ws/ui] Client connected');
+    aliveMap.set(ws, true);
+
+    ws.on('pong', () => {
+      aliveMap.set(ws, true);
+    });
 
     // Send current state on connect
     ws.send(JSON.stringify({
@@ -36,6 +64,7 @@ export function setupUiWs(server: Server): WebSocketServer {
     }));
 
     ws.on('close', () => {
+      aliveMap.delete(ws);
       console.log('[ws/ui] Client disconnected');
     });
   });

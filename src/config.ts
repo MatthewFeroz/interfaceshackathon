@@ -9,4 +9,4 @@ export const MCP_SERVER_DIR = path.join(PROJECT_ROOT, 'mcp-server');
 export const MCP_CONFIG_PATH = path.join(PROJECT_ROOT, 'mcp-config.json');
 
 export const PORT = parseInt(process.env.PORT || '3001', 10);
-export const CLAUDE_MODEL = process.env.CLAUDE_MODEL || 'sonnet';
+export const CLAUDE_MODEL = process.env.CLAUDE_MODEL || 'haiku';
