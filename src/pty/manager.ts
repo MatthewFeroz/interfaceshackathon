@@ -63,8 +63,8 @@ export class PtyManager extends EventEmitter {
         this.emit('data', data);
       }
 
-      // Detect when Claude Code is ready (shows the ">" prompt or idle)
-      if (!this._ready && data.includes('>')) {
+      // Detect when Claude Code is ready — look for the title sequence or prompt chars
+      if (!this._ready && (data.includes('Claude Code') || data.includes('⏵') || data.includes('>'))) {
         this._ready = true;
         this.emit('ready');
         console.log('[pty] Claude Code is ready');
