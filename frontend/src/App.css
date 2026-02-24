@@ -1511,7 +1511,7 @@
 }
 .brief-slot-text-input:focus { outline: none; border-color: var(--accent); }
 
-/* ── Akita (PawBuilder) Theme ──────────────────────────────────────────── */
+/* ── Akita Theme ─────────────────────────────────────────────────────── */
 
 .app[data-theme="akita"] {
   --bg-primary:    #FFF8E7;

@@ -714,7 +714,7 @@ export default function App() {
 
   // ── Update document title based on theme ──
   useEffect(() => {
-    document.title = appTheme === 'akita' ? 'Akita — PawBuilder' : 'Akita — Prompt Builder'
+    document.title = 'Akita — The Goofiest Website Builder'
   }, [appTheme])
 
   // ── Progressive unlock: each section requires the previous to have content ──
@@ -1055,7 +1055,7 @@ export default function App() {
             {appTheme === 'akita' && <DogMascot size={44} />}
             <div>
               <div className="header-title">akita</div>
-              {appTheme === 'akita' && <div className="header-subtitle">The goofiest page builder ever</div>}
+              {appTheme === 'akita' && <div className="header-subtitle">The goofiest website builder</div>}
             </div>
           </div>
 
