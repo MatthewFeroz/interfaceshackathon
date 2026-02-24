@@ -671,7 +671,7 @@ function MarketingBriefCard({ level, answers, onRemoveTag, onTextChange, onClear
 // ─── Main App ─────────────────────────────────────────────────────────────────
 
 export default function App() {
-  const [appTheme, setAppTheme] = useState('dark')
+  const [appTheme, setAppTheme] = useState('akita')
   const [activeBlock, setActiveBlock] = useState(null)
 
   // Funnel state
